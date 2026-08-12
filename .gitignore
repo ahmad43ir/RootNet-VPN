@@ -1,0 +1,238 @@
+# ═══════════════════════════════════════════════════════
+# 🔒 ROOTNET VPN — SECURITY HARDENED .gitignore
+# ═══════════════════════════════════════════════════════
+# Never commit secrets, credentials, API keys, or
+# sensitive configuration data to version control.
+# ═══════════════════════════════════════════════════════
+
+
+# ──────────────────────────────────────────────
+# 📁 OS & Editor Artifacts
+# ──────────────────────────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+*.swo
+*.swn
+*.bak
+*.orig
+*.~lock.*
+.DS_Store
+Thumbs.db
+Desktop.ini
+.atom/
+.build/
+.buildlog/
+.history/
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# Android Studio / IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code — Uncomment if you want to ignore VS Code settings
+# (Many teams track .vscode/ for shared launch configs)
+#.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+
+# ──────────────────────────────────────────────
+# 🎯 Environment Files — NEVER COMMIT THESE
+# ──────────────────────────────────────────────
+# Environment files commonly store API keys, tokens,
+# database URLs, and other secrets.
+.env
+.env.*
+.envrc
+*.env
+*.env.local
+*.env.development
+*.env.production
+*.env.staging
+*.env.test
+*.env.example
+
+# Flutter auto-generated integration env (contains build references)
+**/flutter_native_integration.env
+
+
+# ──────────────────────────────────────────────
+# 🔥 Firebase & Supabase Secrets
+# ──────────────────────────────────────────────
+# Firebase config files contain project identifiers
+# and API keys for your Firebase services.
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-credentials.json
+**/service-account.json
+**/firebase-admin.json
+
+# Supabase secrets reference — contains access tokens & DB passwords
+**/SUPABASE_REFERENCE.md
+
+# Firebase secrets reference
+**/FIREBASE_REFERENCE.md
+
+
+# ──────────────────────────────────────────────
+# 🔐 Android Release Signing — NEVER COMMIT THESE
+# ──────────────────────────────────────────────
+# The keystore file and key.properties contain private keys
+# and passwords for signing your app release builds.
+# Anyone with these files can sign apps as YOU.
+# Store the keystore file securely (password manager, encrypted backup).
+/android/app/upload-keystore.jks
+/android/key.properties
+/android/local.properties
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+
+# ──────────────────────────────────────────────
+# 📦 Flutter / Dart / Pub
+# ──────────────────────────────────────────────
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+
+# ──────────────────────────────────────────────
+# 🔧 Flutter Auto-Generated (Platform Ephemeral)
+# ──────────────────────────────────────────────
+# Flutter generates these during build — they contain
+# platform-specific derived configs and should not be tracked.
+**/ephemeral/
+
+
+# ──────────────────────────────────────────────
+# ☁️ Cloudflare Wrangler
+# ──────────────────────────────────────────────
+# Wrangler cache contains Cloudflare account info,
+# session tokens, and deployment state.
+.wrangler/
+**/node_modules/
+
+
+# ──────────────────────────────────────────────
+# 🗄️ Supabase CLI & Temp Files
+# ──────────────────────────────────────────────
+# Supabase temp files contain project ref, pooler URL, etc.
+supabase/.temp*
+supabase/.temp_migration_backup.sql
+
+
+# ──────────────────────────────────────────────
+# 🤖 AI Agent Workspace & Credentials
+# ──────────────────────────────────────────────
+# AI agent cache, conversation history, skill caches,
+# and the master credential file for AI agents.
+.claude/
+.agents/
+agent_only.txt
+
+
+# ──────────────────────────────────────────────
+# 📁 Secrets & Credentials — Broad Catch-All
+# ──────────────────────────────────────────────
+# Catch-alls for any secret/credential directories or files
+# that might be created during development.
+**/secrets/
+**/credentials/
+*.secret
+*.token
+*.key
+**/auth_config.json
+**/api-keys.json
+**/client_secret*.json
+
+
+# ──────────────────────────────────────────────
+# 📁 Python / Scripting Artifacts
+# ──────────────────────────────────────────────
+# Python virtual environments, cache, and build artifacts
+# (often used for tooling/scripts alongside Flutter projects)
+__pycache__/
+*.py[cod]
+*$py.class
+proxy_pool.json
+venv/
+.venv/
+env/
+
+
+# ──────────────────────────────────────────────
+# 📦 Package Manager Caches
+# ──────────────────────────────────────────────
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# ──────────────────────────────────────────────
+# 📝 Logs & Diagnostics
+# ──────────────────────────────────────────────
+*.log
+logs/
+**/logs/
+
+
+# ──────────────────────────────────────────────
+# 🪟 Windows Reserved Names / Artifacts
+# ──────────────────────────────────────────────
+/nul
+CON
+PRN
+AUX
+NUL
+COM1
+COM2
+COM3
+COM4
+COM5
+COM6
+COM7
+COM8
+COM9
+LPT1
+LPT2
+LPT3
+LPT4
+LPT5
+LPT6
+LPT7
+LPT8
+LPT9
+
+
+# ──────────────────────────────────────────────
+# 💻 Symbolication & Obfuscation Artifacts
+# ──────────────────────────────────────────────
+app.*.symbols
+app.*.map.json
+
+
+# ──────────────────────────────────────────────
+# 🛠️ Tooling / IDE Backup Artifacts
+# ──────────────────────────────────────────────
+*.sublime-project
+*.sublime-workspace
+*.komodoproject

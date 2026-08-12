@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "skills": {
+    "rootnet-vpn": {
+      "source": "./rootnet-vpn",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "ui-ux": {
+      "source": "./ui-ux",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "android-security": {
+      "source": "./android-security",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "vpn-engineering": {
+      "source": "./vpn-engineering",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "native-android": {
+      "source": "./native-android",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "monetization": {
+      "source": "./monetization",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "supabase-edge-functions": {
+      "source": "./supabase-edge-functions",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "release-deploy": {
+      "source": "./release-deploy",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "crash-triage": {
+      "source": "./crash-triage",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "networking-api": {
+      "source": "./networking-api",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "testing": {
+      "source": "./testing",
+      "sourceType": "local",
+      "skillPath": "SKILL.md"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "19fca56d93a6d212c6373ad921dcaeddf2ff13e3558e6bfd6e63acb063255f86"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "768f9a7532780a72165f79c91d71a4bf82abd9ed31045238c2acb40322fc1d0a"
+    }
+  }
+}

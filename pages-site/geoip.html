@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoIP — IP Geolocation API | Chob Group</title>
+  <meta name="description" content="Free IP geolocation API. Pass an IP, get back country name and flag emoji. Built on Cloudflare Workers." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%23FFC832' stroke-width='2'/><text x='50' y='62' font-size='40' text-anchor='middle' fill='%23FFC832'>G</text></svg>" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0C0F1A; color: #E0E0E0; min-height: 100vh;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255, 200, 50, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 200, 50, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px; animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+    .bg-glow {
+      position: fixed; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 200, 50, 0.06), transparent 70%);
+      top: -150px; left: -150px; z-index: 0;
+      animation: glowPulse 5s ease-in-out infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% { opacity: 0.5; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.15); }
+    }
+
+    .container { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between; padding: 20px 0;
+      border-bottom: 1px solid rgba(255, 200, 50, 0.08);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: #0C0F1A; background: linear-gradient(135deg, #FFC832, #FFB800); }
+    .logo-text { font-size: 18px; font-weight: 700; }
+    .logo-text span { background: linear-gradient(135deg, #FFC832, #FFB800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 24px; font-size: 14px; }
+    .nav-links a { color: rgba(224, 224, 224, 0.5); transition: color 0.2s; }
+    .nav-links a:hover { color: #8888FF; }
+
+    .hero { padding: 80px 0 40px; text-align: center; }
+    .hero-icon { font-size: 64px; margin-bottom: 12px; }
+    .hero h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 700; margin-bottom: 16px; }
+    .hero h1 span { color: #FFC832; }
+    .hero p { font-size: 16px; color: rgba(224, 224, 224, 0.5); max-width: 550px; margin: 0 auto 32px; line-height: 1.7; }
+    .hero-badge {
+      display: inline-block; padding: 6px 16px; border-radius: 20px;
+      border: 1px solid rgba(255, 200, 50, 0.2); background: rgba(255, 200, 50, 0.06);
+      font-size: 12px; color: #FFC832; letter-spacing: 1px; margin-bottom: 24px;
+    }
+
+    .card {
+      background: rgba(12, 15, 26, 0.6); border: 1px solid rgba(255, 200, 50, 0.08);
+      border-radius: 16px; padding: 28px; backdrop-filter: blur(10px);
+      margin-bottom: 20px;
+    }
+    .card h3 { font-size: 16px; color: #FFC832; margin-bottom: 12px; }
+    .card p, .card li { font-size: 14px; color: rgba(224, 224, 224, 0.6); line-height: 1.7; }
+    .card ul { list-style: none; padding: 0; }
+    .card li { padding: 6px 0; }
+    .card li::before { content: '▸ '; color: #FFC832; }
+
+    /* ─── IP Lookup Tool ─── */
+    .lookup-box {
+      display: flex; gap: 12px; align-items: center; margin: 16px 0;
+    }
+    .lookup-box input {
+      flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255, 200, 50, 0.2);
+      background: rgba(0, 0, 0, 0.3); color: #E0E0E0; font-size: 15px; font-family: inherit;
+      outline: none; transition: border-color 0.3s;
+    }
+    .lookup-box input:focus { border-color: #FFC832; }
+    .lookup-box input::placeholder { color: rgba(224, 224, 224, 0.3); }
+    .lookup-box input.error { border-color: #FF6B6B; }
+
+    .lookup-btn {
+      padding: 14px 28px; border-radius: 12px; border: none;
+      background: #FFC832; color: #0C0F1A; font-weight: 700; font-size: 14px;
+      cursor: pointer; transition: all 0.3s; white-space: nowrap;
+    }
+    .lookup-btn:hover { box-shadow: 0 0 25px rgba(255, 200, 50, 0.3); transform: translateY(-1px); }
+    .lookup-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .lookup-result {
+      margin-top: 16px; padding: 20px; border-radius: 12px;
+      background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 200, 50, 0.1);
+      min-height: 60px; display: flex; align-items: center; justify-content: center;
+      font-size: 28px; gap: 16px; transition: all 0.4s;
+    }
+    .lookup-result .flag { font-size: 48px; line-height: 1; }
+    .lookup-result .name { font-size: 20px; font-weight: 600; color: #E0E0E0; }
+    .lookup-result .ip-label { font-size: 13px; color: rgba(224, 224, 224, 0.4); }
+    .lookup-result .placeholder {
+      font-size: 15px; color: rgba(224, 224, 224, 0.3);
+    }
+    .lookup-result .error {
+      font-size: 15px; color: #FF6B6B;
+    }
+    .lookup-result .loading {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 15px; color: rgba(224, 224, 224, 0.5);
+    }
+    .lookup-result .spinner {
+      width: 20px; height: 20px; border: 2px solid rgba(255, 200, 50, 0.2);
+      border-top-color: #FFC832; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .validation-hint {
+      font-size: 12px; color: rgba(255, 107, 107, 0.8);
+      min-height: 18px; margin-top: 4px; transition: all 0.3s;
+    }
+
+    code {
+      background: rgba(255, 200, 50, 0.08); padding: 2px 8px; border-radius: 6px;
+      font-size: 13px; color: #FFC832;
+    }
+    pre {
+      background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 200, 50, 0.1);
+      border-radius: 10px; padding: 16px; overflow-x: auto; margin: 12px 0;
+    }
+    pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; }
+
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: all 0.3s;
+    }
+    .btn.primary { background: #FFC832; color: #0C0F1A; }
+    .btn.primary:hover { box-shadow: 0 0 30px rgba(255, 200, 50, 0.3); transform: translateY(-2px); }
+    .btn.secondary { border: 1px solid rgba(255, 200, 50, 0.2); color: rgba(224, 224, 224, 0.7); }
+    .btn.secondary:hover { border-color: #FFC832; background: rgba(255, 200, 50, 0.06); }
+
+    footer { border-top: 1px solid rgba(255, 200, 50, 0.06); padding: 24px 0; text-align: center; }
+    footer p { font-size: 13px; color: rgba(224, 224, 224, 0.3); }
+    footer a { color: #8888FF; }
+
+    .section { padding: 40px 0; }
+    @media (max-width: 768px) { .nav-links { display: none; } .hero { padding: 40px 0; } }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <nav>
+      <div class="logo">
+        <div class="logo-mark">G</div>
+        <div class="logo-text">Geo<span>IP</span></div>
+      </div>
+      <div class="nav-links">
+        <a href="/">← Chob Group</a>
+        <a href="/rootnet.html">RootNet</a>
+      </div>
+    </nav>
+  </div>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-icon">🌍</div>
+      <div class="hero-badge">🛰️ A Chob Group project</div>
+      <h1>GeoIP <span>API</span></h1>
+      <p>Give it an IP, get back the country name and country code. A Supabase Edge Function with automatic failover and caching.</p>
+      <div class="btn-group">
+        <a href="https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api?ip=8.8.8.8" target="_blank" class="btn primary">⚡ Try It Now</a>
+        <a href="https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api" target="_blank" class="btn secondary">🔍 View API</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- ─── INTERACTIVE TOOL ─── -->
+      <div class="card">
+        <h3>🔍 Try It Live</h3>
+        <p>Enter an IP address below to look up its country and flag.</p>
+        <div class="lookup-box">
+          <input type="text" id="ipInput" placeholder="e.g. 8.8.8.8" spellcheck="false" autocomplete="off" />
+          <button class="lookup-btn" id="lookupBtn">🔍 Lookup</button>
+        </div>
+        <div class="validation-hint" id="validationHint"></div>
+        <div class="lookup-result" id="lookupResult">
+          <span class="placeholder">Enter an IP and tap Lookup</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📡 API Endpoint</h3>
+        <p>One endpoint. One parameter. That's it.</p>
+        <pre><code>GET /?ip=45.196.201.208
+
+→ { "ip": "45.196.201.208", "country": "Philippines", "countryCode": "PH" }</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>⚡ Quick Start</h3>
+        <pre><code>curl https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api?ip=8.8.8.8</code></pre>
+        <p style="margin-top:8px;">Returns: <code>{"ip":"8.8.8.8","country":"United States","countryCode":"US"}</code></p>
+      </div>
+
+      <div class="card">
+        <h3>✨ Features</h3>
+        <ul>
+          <li>Primary: Supabase IP geolocation data (fast, internal)</li>
+          <li>Fallback: ip-api.com cloud API (when Supabase is down)</li>
+          <li>1-hour in-memory cache for fast repeat lookups</li>
+          <li>Circuit breaker — auto-disables Supabase after 5 failures</li>
+          <li>Full CORS support — use it from any web app</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>🔧 Deploy Your Own</h3>
+        <pre><code>git clone &lt;repo&gt;
+cd supabase/functions/geo-api
+supabase functions deploy geo-api --no-verify-jwt</code></pre>
+        <p style="margin-top:8px;">Requires Supabase project with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p><a href="/">← Back to Chob Group</a> · Built with ❤️ and AI</p>
+      <p style="margin-top:6px; font-size:12px;">© 2026 GeoIP · A Chob Group project</p>
+    </div>
+  </footer>
+
+  <script>
+    // ─── IP Validation ───
+    function isValidIP(str) {
+      const s = str.trim();
+      // IPv4
+      const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+      const match = s.match(ipv4);
+      if (match) {
+        return match.slice(1).every(n => parseInt(n, 10) >= 0 && parseInt(n, 10) <= 255);
+      }
+      // IPv6: standard 8 groups
+      const ipv6 = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+      if (ipv6.test(s)) return true;
+      // IPv6: compressed (::)
+      if (s.includes('::')) {
+        // Special case: :: alone
+        if (s === '::') return true;
+        // ::1, 2001:db8::1, etc. — at least one group on each side
+        const ipv6c = /^([0-9a-fA-F]{1,4}:){1,7}(:[0-9a-fA-F]{1,4}){1,7}$/;
+        if (ipv6c.test(s)) {
+          const groups = s.split(':').filter(g => g.length > 0);
+          return groups.length <= 8;
+        }
+        return false;
+      }
+      return false;
+    }
+
+    // ─── Enter key support ───
+    document.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('ipInput');
+      const btn = document.getElementById('lookupBtn');
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLookup();
+      });
+      btn.addEventListener('click', handleLookup);
+    });
+
+    // ─── Main lookup ───
+    const API_URL = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api';
+
+    async function handleLookup() {
+      const input = document.getElementById('ipInput');
+      const btn = document.getElementById('lookupBtn');
+      const result = document.getElementById('lookupResult');
+      const hint = document.getElementById('validationHint');
+      const ip = input.value.trim();
+
+      // ── Reset states ──
+      input.classList.remove('error');
+      hint.textContent = '';
+
+      // ── Validate ──
+      if (!ip) {
+        input.classList.add('error');
+        hint.textContent = '⚠️ Please enter an IP address.';
+        input.focus();
+        return;
+      }
+
+      if (!isValidIP(ip)) {
+        input.classList.add('error');
+        hint.textContent = '⚠️ Invalid IP address. Enter a valid IPv4 (e.g. 8.8.8.8) or IPv6 address.';
+        input.focus();
+        return;
+      }
+
+      // ── Loading ──
+      btn.disabled = true;
+      btn.textContent = '⏳ Looking up...';
+      result.innerHTML = '<div class="loading"><div class="spinner"></div> Looking up IP…</div>';
+
+      try {
+        const response = await fetch(`${API_URL}/?ip=${encodeURIComponent(ip)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // ── Success ──
+        result.innerHTML = `
+          <span class="flag">${data.flag}</span>
+          <div>
+            <div class="name">${data.name}</div>
+            <div class="ip-label">${ip}</div>
+          </div>
+        `;
+      } catch (err) {
+        result.innerHTML = `<span class="error">❌ ${err.message}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Lookup';
+      }
+    }
+  </script>
+</body>
+</html>

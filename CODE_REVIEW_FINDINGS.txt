@@ -1,0 +1,243 @@
+================================================================================
+ RootNet + ProxyBox Monorepo — COMPREHENSIVE CODE REVIEW FINDINGS (round 2)
+ Date: 2026-08-10
+ Scope: Both Android apps (RootNet + ProxyBox), rootnet-api, proxy-api,
+        telegram-bot, vless-worker, vless-scraper, all migrations, scrape.yml,
+        AGENTS.md compliance
+ Verified: android-app `testDebugUnitTest` BUILD SUCCESSFUL,
+           proxybox-app `compileDebugKotlin` BUILD SUCCESSFUL,
+           python py_compile OK (main.py / proxy_pool.py / cleanup_chats.py),
+           node --check OK (vless-worker/src/index.js),
+           secrets sweep clean, .env / keystore.properties / agent_only.txt gitignored
+           (Deno CLI not available locally — edge functions were not type-checked
+           locally; they ship via `supabase functions deploy` which verifies)
+ Severity: 🔴 Critical | 🟠 High | 🟡 Medium | 🔵 Low
+================================================================================
+ NOTE: Round-1 🔴 findings are RESOLVED in the working tree (see ✅ section).
+       No 🔴 remains. The findings below are what the round-2 expanded scope
+       (ProxyBox, build checks, migration liveness) surfaced.
+
+--------------------------------------------------------------------------------
+ 🟠 HIGH
+--------------------------------------------------------------------------------
+
+🟠 RootNet: supabase/functions/rootnet-api/index.ts:230 — `/servers` omits
+   `premium_only` → premium toggle shows an EMPTY list
+   Issue:
+     handleServers() selects 'name, flag, country, config, type, config_format'
+     but NOT premium_only. RemoteServerRepository.mapServers() reads
+     item.optBoolean("premium_only", false), so every server arrives with
+     isPremium=false on the (now primary) Worker path. ServerListScreen's
+     premium toggle defaults to showPremium=true and filters
+     `it.isPremium == showPremium` → premium users land on an EMPTY server
+     list by default (and the "PREMIUM" card badge never shows).
+     Round-1 🔴 "premium users never receive premium servers" is only
+     half-fixed: the Worker path is used now, but the flag never reaches the app.
+   Risk: Functional — shipped premium toggle is dead on arrival.
+   Fix: Add `premium_only` to the .select() in handleServers (the direct
+     REST fallback path already returns it).
+   References: android-security §JWT premium contract; ServerListScreen.kt
+     visible filter; git history.
+
+🟠 RootNet: supabase/functions/rootnet-api/index.ts — admin endpoints sit behind
+   the JWT gate
+   Issue:
+     authenticate() runs for EVERY POST before routing, so /send-notification
+     and /import-vless return 401 unless a valid user JWT is ALSO sent. The
+     X-Admin-Key check inside the handlers is therefore redundant — an admin
+     script with only X-Admin-Key (the documented contract) can never reach
+     them.
+   Risk: Functional — both admin features unusable via the documented auth.
+   Fix: Route admin endpoints BEFORE the authenticate() block (or skip
+     authentication when X-Admin-Key matches). Keep anti-replay on them.
+   References: index.ts router; README contract "X-Admin-Key".
+
+🟠 ProxyBox: ads/AdManager.kt + AndroidManifest.xml — Google TEST AdMob IDs ship
+   in the app
+   Issue:
+     BANNER_UNIT_ID / INTERSTITIAL_UNIT_ID and the manifest APPLICATION_ID
+     are Google's official test IDs (ca-app-pub-3940256099942544/...). If the
+     APK ships like this: zero ad revenue, and AdMob policy flags production
+     traffic on test IDs.
+   Risk: Monetization / policy — release blocker.
+   Fix: Replace with the real AdMob App ID + unit IDs before release
+     (README already documents this; add a release-checklist gate).
+   References: proxybox-app/README.md; checklist C2.
+
+🟠 Ops: supabase/migrations/ — newest migrations are unapplied/untracked
+   Issue:
+     20260810000001–04 are untracked and 20260809000001 is modified after
+     apply. Until they are applied to the project (supabase db push):
+       • request_ids table does not exist → validateAntiReplay() fail-opens
+         (warn + continue) → replay protection is a NO-OP in production;
+       • the SIP import block in the import RPC is not live → scraped SIP
+         configs still get marked imported/unparsable by the old function;
+       • servers.config_format has no CHECK constraint.
+   Risk: Functional/security — the round-2 "anti-replay + SIP" story exists
+     in the repo but not in the running system.
+   Fix: Commit the migrations, apply them, and verify
+     `SELECT * FROM request_ids` and the import RPC body in the live DB.
+   References: git status (?? / M migrations); validateAntiReplay().
+
+--------------------------------------------------------------------------------
+ 🟡 MEDIUM
+--------------------------------------------------------------------------------
+
+🟡 DB: 20260810000002_add_request_ids_table.sql — request_ids has NO TTL cleanup
+   Issue:
+     The migration's only cleanup is a COMMENTED-OUT DELETE. Every
+     authenticated API request inserts a row forever (TEXT PK, no expiry).
+     At app scale this grows without bound on the free-tier DB.
+   Fix: Add a pg_cron job (like import-vless-every-30min) running e.g. every
+     minute: DELETE FROM request_ids WHERE created_at < now() - interval
+     '60 seconds'. Note 60s TTL alone weakens replay protection to ~60s window
+     — acceptable per design (timestamp ±30s already bounds it).
+   References: checklist A5 / G6.
+
+🟡 SIP: bot/worker/import accept ssh/http, app rejects them at connect
+   Issue:
+     _parser.ts extractSip, vless-worker extractConfigLinks, and the import
+     RPC all accept {"protocol":"ssh"|"http"...} and store them as
+     type='socks' / config_format='sip'; but ConfigNormalizer.fromSip() throws
+     for anything non-socks ("SSH/HTTP require dedicated Xray outbounds"). Such
+     configs flow through the whole pipeline into the DB and can never connect.
+   Risk: Functional — dead servers in the list; connect shows an error.
+   Fix: Restrict SIP to socks/socks4/socks5 at the earliest stage (bot parser,
+     worker, import RPC), OR implement SSH/HTTP outbounds before advertising
+     them (VpnServer displayName already says "SIP (SOCKS only)" — align the
+     pipeline).
+   References: checklist D5 / B1; ConfigNormalizer.fromSip.
+
+🟡 ProxyBox: data/ProxyApi.kt — no cert pinning / anti-replay on the shared host
+   Issue:
+     Raw HttpURLConnection to bprkazfxqmanrybiexnh.supabase.co with no
+     CertificatePinner, no X-Request-Timestamp/Id. RootNet pins this exact host
+     (primary + backup pins in PinnedHttpClient). A MITM could serve a forged
+     proxy batch.
+   Risk: Security (moderate — public endpoint, but violates the project's
+     "every API call through the pinned client" rule).
+   Fix: Port PinnedHttpClient (or its pins) into ProxyBox — same host, same
+     backup-pin rotation story.
+   References: android-security skill; PinnedHttpClient.kt.
+
+🟡 Android: SupabaseAuthRepository.currentToken() — synchronous refresh can
+   block the UI thread
+   Issue:
+     On token expiry, currentToken() runs refreshTokenSync() = runBlocking(IO)
+     with a 15s client timeout. isPremium() (called during Compose) invokes it
+     on the main thread → up to 15s of UI freeze / ANR window per expiry.
+   Risk: Performance/UX.
+   Fix: Make the refresh a suspend path triggered before UI reads (e.g.
+     refresh in an IO coroutine on app foreground), or accept a single
+     blocking refresh but bound its timeout lower. Also delete now-dead
+     refreshInBackground().
+   References: round-1 🟡 "expired-token race"; RemoteServerRepository.
+
+🟡 Pipeline: "scraped → premium" policy still not implemented; comment is wrong
+   Issue:
+     vless-worker insertLink() defaults premiumOnly=false (free) unless the
+     message text matches /premium|vip/i — while its own comment claims
+     "Scraped links default to premium". The edit to the already-applied
+     20260803000002 migration (premium_only true) is dead code; 20260809000001
+     honors v_row.premium_only (default false). So scraped servers are FREE,
+     contradicting checklist G.5 ("scraped → premium").
+   Fix: Decide the policy and make it live in ONE place (worker default or the
+     import RPC), fix the comment, revert dead edits to applied migrations.
+   References: vless-worker index.js premiumOnly; migration 20260803000002.
+
+🟡 VPN: ConfigNormalizer.fromShadowsocksLink — base64 userinfo / all-in-one ss
+   links misparsed
+   Issue:
+     `ss://base64(method:pass)@host:port` and `ss://base64(method:pass@host:port)`
+     forms are not decoded; the base64 blob becomes the "method" (and host for
+     the all-in-one form). The import RPC handles both forms, so such rows
+     exist in `servers` and will fail to connect in the app.
+   Fix: base64-decode the userinfo before splitting method:password (and the
+     no-@ form) — mirror the import RPC logic.
+   References: checklist B1; import RPC ss handling.
+
+--------------------------------------------------------------------------------
+ 🔵 LOW
+--------------------------------------------------------------------------------
+
+🔵 proxy-api/index.ts — CORS echoes ANY Origin (`Access-Control-Allow-Origin:
+   origin || '*'`), unlike rootnet-api's allow-list. Acceptable for a public
+   GET endpoint (no credentials), but inconsistent; consider the same
+   allow-list.
+
+🔵 telegram-bot/_handlers.ts checkRunningWorkflow — URL passes
+   `status=in_progress&status=queued`; GitHub's API accepts a single status
+   value, so queued runs may be missed (usually harmless — the Actions
+   concurrency group already queues them). Verify or split into two queries.
+
+🔵 ProxyBox HomeViewModel — `hasLoadedOnce` is a Compose mutableStateOf inside
+   a ViewModel; should be a StateFlow for lifecycle correctness. Cosmetic.
+
+🔵 claim_free_connection RPC — first-claim race: two concurrent claims on a
+   brand-new user both miss the FOR UPDATE row and one INSERT hits the PK
+   unique violation → the edge function reports granted:false once. Rare;
+   use INSERT ... ON CONFLICT (user_id) DO UPDATE to be safe.
+
+🔵 scrape.yml report script — multi-line `else` branch sends raw log tail;
+   fine. Entire report block is one big heredoc — keep as-is (works).
+
+🔵 telegram-bot /scrape — `setLastScrapeTime` is only written on successful
+   dispatch (res.ok); a failed dispatch doesn't update it, so rapid retries
+   after a failure aren't throttled. Acceptable (dispatch is cheap).
+
+🔵 RootNet ServerCard — "protocol:" line shows configFormat (Link/NPV/SIP),
+   while protocol type is on the line above; the checklist asked for
+   "protocol: VLESS|NPV|SIP". Both are present; consider merging for clarity.
+
+--------------------------------------------------------------------------------
+ ✅ VERIFIED GOOD (round-1 criticals + checklist passes)
+--------------------------------------------------------------------------------
+- Scraper: _patch() restored; cleanup_dead_proxies counts before delete;
+  requirements.txt pinned (telethon==1.38.0, supabase==2.10.0, httpx==0.27.2);
+  RUN_ONCE_MAX_MESSAGES=3 (VLESS) + messages_per_channel=1 (proxy); cursor
+  min_id new-messages-only; MAX_TEST_PER_RUN=3 with new→untested/failed→stale
+  priority; dead proxies skipped in test list; deactivate() sets
+  deactivated_at + 3-day retention; semaphore=4; FloodWaitError honored
+  (flood_sleep_threshold=60, capped 300s sleep); GH concurrency group +
+  timeout-minutes:10 + ubuntu-latest; cron OFF (manual /scrape only);
+  webhook 200ms insert spacing; ≤20 REST calls/run; reports via BOT_TOKEN
+  (never the user account); TELEGRAM_SESSION never logged/regenerated.
+- Security: no secrets in AppConstants/ProxyBox; cert pinning primary+backup
+  (RootNet); SecurePrefs AES-256-GCM/Keystore; RLS correct everywhere —
+  servers (anon free-only / premium via request.jwt.claims), scraper_config/
+  scraper_proxies/bot_*/free_connection_quota/request_ids: enabled, no
+  policies (service_role only); SECURITY DEFINER RPCs revoked from
+  PUBLIC/anon/authenticated, granted to service_role; webhook X-Webhook-Key
+  on all /webhook* + /cleanup; bot webhook secret_token validated; admin
+  endpoints keyed; getClientIp uses rightmost XFF; anti-replay client+server
+  wired (pending migration apply); root detection 3 checks (fail-open per
+  spec); version gate before connect + startup (fail-open).
+- VPN: normalization before Xray for all schemes incl. SIP(socks) and
+  httpupgrade/splithttp/xhttp/grpc/ws stream settings + tls/reality;
+  SOCKS 127.0.0.1:10807 → tun2socks → TUN; sendFd failure now stops the VPN
+  (no silent dead tunnel); SessionTimer 30/60-min caps + ad-gate +
+  claim_free_connection (2/24h, FOR UPDATE) — unit-tested, suite passes.
+- Premium flow: Worker-first for logged-in users, direct REST fallback for
+  guests; free users filtered server+client; premium toggle UI + protocol
+  badge present (see 🟠 #1 for the data gap).
+- Bot UX: /scrape 5-min cooldown + confirm/cancel buttons, pendingScrapeConfirm
+  persisted + cleared, GitHub in_progress/queued running-check, server CRUD
+  with confirmations, /addproxy parse of tg:// / mtproto:// / host:port:secret.
+- Migrations: order sane; indexes on servers (is_active/premium_only/name) and
+  scraper_proxies_active_idx (is_active, last_ok); import pg_cron every 30min;
+  config_format CHECK constraint added (20260810000004); SIP column comment.
+- Builds: android-app unit tests PASS; proxybox-app compileDebugKotlin PASS;
+  py_compile PASS; node --check PASS; wrangler.toml bindings sane
+  (observability on; secrets via `wrangler secret put`).
+
+--------------------------------------------------------------------------------
+ TOP PRIORITIES
+--------------------------------------------------------------------------------
+ 1. Add `premium_only` to rootnet-api `/servers` select (premium toggle empty).
+ 2. Route admin endpoints before the JWT gate (X-Admin-Key alone must work).
+ 3. Commit + apply migrations 20260810000001–04 + the 20260809000001 RPC
+    change; add a request_ids TTL cleanup cron.
+ 4. Replace ProxyBox test AdMob IDs before any release.
+ 5. Restrict SIP ssh/http at the earliest pipeline stage (or implement the
+    outbounds), and decide the real "scraped → premium" policy.
+================================================================================

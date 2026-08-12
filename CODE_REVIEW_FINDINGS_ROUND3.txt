@@ -1,0 +1,195 @@
+================================================================================
+ RootNet — BUGFIX REVIEW FINDINGS (round 3)
+ Date: 2026-08-11
+ Scope: 3 targeted bug fixes — XrayVpnEngine (Fix 1), RootNetVpnService
+        (Fix 2), telegram-bot version commands (Fix 3, verified only).
+        Review-only pass: NO code was changed in this round.
+ Verified: Android app sources read in full (engine, service, daemon manager,
+        ViewModel state machine, ConnectScreen/MainActivity, VersionCheckService,
+        VersionInfo model); telegram-bot _handlers.ts + _db.ts + index.ts;
+        app_config migration + VersionCheckService field contract cross-checked.
+ Severity: 🔴 Critical | 🟠 High | 🟡 Medium | 🔵 Low
+================================================================================
+ NOTE: The 3 fixes themselves are logically sound (see ✅ section). The
+       findings below are the gaps/hardening they leave open. Fix items 1–3
+       first — they are user-visible or a security regression of Fix 1.
+
+ ====== STATUS: ALL FINDINGS BELOW ARE FIXED (2026-08-11) ======
+ 1. 🟠 setPackage + signature permission (manifest VPN_STATE) + EPOCH extra
+    → vpn/XrayCoreManager.kt sendStateBroadcast, vpn/VpnRuntime.kt,
+      vpn/XrayConfig.kt (CONNECTION_EPOCH), AndroidManifest.xml
+ 2. 🟠 consent stuck-state → domain/XrayVpnEngine.kt emits ERROR with
+    "VPN permission required — grant it, then tap Connect again"
+ 3. 🟡 zombie tunnel → XrayVpnEngine timeout branch calls stopService;
+    defensive xrayProcess.destroy() at top of startCore; DISCONNECTED during
+    handshake no longer silently resets to Idle (ERROR is shown instead)
+ 4. 🟡 stale-broadcast race → CONNECTION_EPOCH echoed into every state
+    broadcast; receiver drops mismatched epochs
+ 5. 🔵 bot version sanity → telegram-bot/_handlers.ts compareVersion() guards
+    on /setmin + /setlatest (slash + pending-input paths)
+ Validated: android-app `testDebugUnitTest` BUILD SUCCESSFUL;
+ node --check OK on _handlers.ts (no Deno CLI available locally).
+
+--------------------------------------------------------------------------------
+ 🟠 HIGH
+--------------------------------------------------------------------------------
+
+🟠 RootNet: vpn/XrayCoreManager.kt sendStateBroadcast (~line 538) — broadcast is
+   SPOOFABLE by any app; Fix 1's RECEIVER_EXPORTED makes this live
+   Issue:
+     Fix 1 (domain/XrayVpnEngine.kt ensureReceiver, lines 46–52) registers the
+     VpnStateReceiver with RECEIVER_EXPORTED so the :RunSoLibXrayDaemon
+     process's broadcasts reach the main process. But sendStateBroadcast()
+     sends an IMPLICIT broadcast with NO intent.setPackage(). Any app on the
+     device can now spoof the V2RAY_CONNECTION_INFO action:
+       • Fake CONNECTED → receiver's connectedSignal.complete(true) resolves
+         the 15s handshake → ViewModel goes AwaitingAd → ad gate unlocks a
+         session with NO real tunnel.
+       • Fake DISCONNECTED → onEngineDisconnected() → stopTimers() + Idle
+         while the tunnel keeps running → session timer stops policing a
+         LIVE tunnel (monetization bypass).
+     The payload (state enum + 2 speed longs) is not sensitive — this is
+     spoofing, not a data leak.
+   Fix (ONE LINE): in sendStateBroadcast() add
+     intent.setPackage(context.packageName)
+     Same-UID cross-process delivery is preserved (both processes share the
+     package); third-party spoofing is blocked. Do this before shipping Fix 1.
+   References: android-security skill; XrayVpnEngine.kt:43–52; XrayCoreManager.kt
+     sendStateBroadcast.
+
+🟠 RootNet: domain/XrayVpnEngine.kt consent path (lines 68–82) — app STUCK in
+   "Connecting" after the VPN permission dialog
+   Issue:
+     When VpnService.prepare() returns a non-null intent, connect() emits
+     CONNECTING, startActivity()s the consent dialog (fire-and-forget — no
+     startActivityForResult, and MainActivity has NO RESULT_OK handling), then
+     RETURNS. ConnectionViewModel.connect() set state=Connecting synchronously
+     and nothing ever leaves it:
+       • User GRANTS the dialog → returns to app → state is still Connecting →
+         the power button shows a Stop icon; tapping it calls
+         cancelOrDisconnect() (NOT connect). The code comment "the user grants
+         once, then taps connect again" is broken — the second tap cancels.
+       • User CANCELS the dialog → state is Connecting forever (until they tap
+         Stop).
+     Recovery exists (Stop → Idle → Connect) but UX is broken/confusing.
+     NOTE: pre-existing (Fix 1 did not introduce it), but the new CONNECTING
+     emit does not address it.
+   Fix (pick one):
+     a) After launching the consent intent, reset the VM to Idle and surface
+        "Grant VPN permission, then tap Connect again" (snackbar/message), OR
+     b) Use ActivityResultLauncher (registerForActivityResult with
+        ActivityResultContracts.StartActivityForResult) keyed on the prepare
+        intent; on RESULT_OK auto-continue the connect flow; on RESULT_CANCELED
+        reset to Idle.
+   References: ConnectionViewModel.connect() guard; ConnectScreen PowerButton
+     onClick when(state: Connecting) -> vm.cancelOrDisconnect().
+
+--------------------------------------------------------------------------------
+ 🟡 MEDIUM
+--------------------------------------------------------------------------------
+
+🟡 RootNet: domain/XrayVpnEngine.kt timeout branch (lines ~99–109) — zombie
+   tunnel left running on the 15s handshake timeout
+   Issue:
+     withTimeoutOrNull(CONNECT_TIMEOUT_MILLIS) firing → sets active=false,
+     emits ERROR, but NEVER stops the service. If the tunnel comes up late
+     (slow device / slow Xray boot), it stays up with the UI in Error — no
+     session timer policing it. A retry then starts a SECOND xray on the same
+     default ports (LOCAL_SOCKS5_PORT/HTTP/API are the same) → old process
+     still holds the ports → new xray bind-fails → repeated confusing failures
+     until the user manually disconnects. Late CONNECTED broadcasts are also
+     dropped (active=false) so the UI never recovers on its own.
+   Fix: in the timeout else-branch, before emitting ERROR, best-effort
+     appContext.stopService(Intent(appContext, RootNetVpnService::class.java))
+     (or call the shared teardown) so a partial connection can't linger.
+   References: vpn-engineering skill (TUN pipeline fragility); VpnEngine.kt
+     contract.
+
+🟡 RootNet: vpn/RootNetVpnService.kt failure path (lines ~95–98) + stale
+   broadcast race — no connection epoch/token in state broadcasts
+   Issue:
+     The new sendStateBroadcast(DISCONNECTED) before stopSelf() is correct and
+     harmless, but onDestroy() → stopAll() → stopCore() sends a SECOND
+     DISCONNECTED (stopCore always broadcasts at the end, XrayCoreManager.kt
+     ~line 327). Double-broadcast itself is idempotent (CompletableDeferred
+     .complete + onEngineDisconnected from Idle are no-ops). The real issue:
+     VpnStateReceiver's ONLY filter is the `active` flag — there is no
+     per-connection token in the extras. A late DISCONNECTED from a previous
+     cycle can clobber a FRESH connect() if it arrives while active==true
+     (retry inside the teardown window). Window is small (teardown is
+     synchronous) but the pattern recurs.
+   Fix: add a monotonically increasing connection epoch to VpnRuntime (e.g.
+     nextConnectId++), put it in the broadcast extras, and ignore broadcasts
+     whose epoch != the current connect's epoch in VpnStateReceiver.
+   References: VpnRuntime.kt STATES/config; XrayVpnEngine VpnStateReceiver.
+
+--------------------------------------------------------------------------------
+ 🔵 LOW
+--------------------------------------------------------------------------------
+
+🔵 telegram-bot/_handlers.ts version commands — no sanity constraint between
+   minimum_version and latest_version; no audit trail
+   Issue:
+     /setmin can set a value ABOVE latest_version → buildVersionInfo() then
+     reports isBelowMinimum for everyone → all clients blocked until an admin
+     fixes it manually. Also nothing records WHO changed WHAT (only
+     updated_at). Admin foot-gun, not a bug.
+   Fix: reject /setmin when arg >= latest_version (or warn); optionally log
+     admin id + change into app_config.audit or a small bot_audit table.
+
+--------------------------------------------------------------------------------
+ ✅ VERIFIED GOOD (these held up under review — do NOT re-fix)
+--------------------------------------------------------------------------------
+- Fix 1 RECEIVER_EXPORTED: necessary and correct for daemon-process → main
+  process broadcast delivery (same-UID). The only regression is the spoofing
+  vector above (fix with setPackage).
+- Double-connect guard: ConnectionViewModel.connect() sets state=Connecting
+  synchronously on the main thread BEFORE launching the coroutine; Connecting /
+  Connected / AwaitingAd all block re-entry → no double engine.connect() or
+  double startForegroundService, even with the consent dialog open. (The stuck
+  Connecting issue is a different bug — see 🟠 #2.)
+- ERROR state is recoverable: VpnConnectionState.Error is NOT in the connect()
+  guard list; PowerButton routes Error → runConnectFlow(); label "Tap to retry".
+- Fix 2 DISCONNECTED broadcast: delivered cross-process (same-UID + exported
+  receiver); the explicit pre-stopSelf broadcast is redundant-but-harmless
+  insurance for the case where onDestroy→stopAll throws.
+- startCore() failure paths ALL covered: buildRuntimeConfigJson throw →
+  false; config.json write throw → false; libxray.so missing → false;
+  pb.start() throw → false; process dead at the 300ms liveness check → false
+  (state reset to DISCONNECTED first); process dies after 300ms → xray reader
+  thread → stopCore() → DISCONNECTED; setupVpn() throw → stopAll(); new
+  sendFd() 10-retry failure → stopAll() (this second fix is solid).
+- Fix 3 bot version commands VERIFIED end-to-end: /version, /setmin, /setlatest,
+  /setbuild, /forceupdate all exist, admin-gated, validate input, and write the
+  EXACT column names/types the app reads:
+    minimum_version TEXT ↔ optString; latest_version TEXT ↔ optString;
+    latest_build INTEGER ↔ optInt; force_update BOOLEAN ↔ optBoolean;
+    update_url / release_notes TEXT ↔ optString. RLS is a non-issue: the bot
+  uses SUPABASE_SERVICE_ROLE_KEY (telegram-bot/index.ts:38,58) which bypasses
+  RLS (public only has SELECT on app_config).
+- Thread-safety: VpnRuntime.state / VpnRuntime.config @Volatile is CORRECT —
+  they are process-local statics touched ONLY inside XrayCoreManager (daemon
+  process; threads: onStartCommand, xray reader thread, CountDownTimer).
+  The main process never reads them; cross-process coordination is done via
+  the broadcast handshake, which is the right design. CAVEAT for future work:
+  reading VpnRuntime.state in the main process would silently return the stale
+  default (DISCONNECTED).
+- 15s handshake timeout: consent-dialog time does NOT count against it (the
+  consent path returns before the timeout starts). 15s is adequate for the
+  service-start → CONNECTED handshake; only the missing teardown (🟡 #1) is wrong.
+
+--------------------------------------------------------------------------------
+ TOP PRIORITIES (fix in this order)
+--------------------------------------------------------------------------------
+ 1. intent.setPackage(context.packageName) in sendStateBroadcast — closes the
+    spoofing regression of Fix 1 (security/monetization).
+ 2. Consent-dialog stuck "Connecting" state — reset to Idle + message after
+    launching consent, or startActivityForResult auto-continue.
+ 3. Tear down the service on the 15s handshake timeout (no zombie tunnel).
+ 4. Optional hardening: connection-epoch token in state broadcasts.
+ 5. Optional: /setmin vs /setlatest sanity check in the bot.
+
+ Build/test notes for the fixing agent: android-app unit tests =
+   `gradlew.bat :app:testDebugUnitTest` (see testing + native-android skills);
+   no edge-function code changed in round 3 (telegram-bot untouched).
+================================================================================
