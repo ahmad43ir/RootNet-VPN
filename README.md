@@ -1,28 +1,33 @@
-# RootNet — Secure VPN. Rooted in Privacy.
+# RootNet — Configs for Your VPN. Rooted in Privacy.
 
-RootNet is a **Flutter VPN mobile app** that provides secure, blazing-fast internet access via the **VLESS/V2Ray** protocol.
+RootNet v2.0 is a **native Android config launcher** (Kotlin + Jetpack Compose): it serves fresh
+**VLESS/V2Ray** server configs from Supabase and lets you **copy** them or **export** them
+straight into the client app you already use (v2rayNG, NekoBox, Hiddify, …). No accounts, no
+built-in tunnel — RootNet never sees your traffic.
 
-- **Backend:** Supabase Edge Functions + Supabase (Auth + Database)
-- **Protocol:** VLESS / V2Ray over WebSocket + TLS + Reality
+- **Backend:** Supabase (Postgres + public REST reads)
+- **Protocol:** VLESS / V2Ray — opened in your own client
 - **UI:** Dark cyber-organic theme (neon green, deep forest)
-- **Platform:** Android (with iOS, Web, Windows, macOS support)
+- **Platform:** Android (minSdk 23)
 
 ## Features
 
-- 🔐 Email/password authentication with Supabase
-- 🌐 8 global VLESS servers (managed via Supabase DB)
-- ⚡ Real-time connection speeds (upload/download)
-- ⏱️ 30-minute ad-gated VPN session (each ad/free connection adds +30 min, capped at 60 min total)
-- 🔔 Persistent Android notification with countdown + speeds
-- 📡 Ping/latency testing per server with auto-sort
+- 📋 **Copy a config** — an Adivery interstitial may play, then the config is on your clipboard
+- 📤 **Export a config** — an Adivery rewarded video plays, then it opens in your default VPN client
+- 🔄 **Refresh** — gated by an Adivery rewarded video (list re-fetches after a full watch)
+- 🌐 Fresh global VLESS servers, refreshed live from Supabase every pull
+- 📡 Live TCP ping per server so you always pick the fastest node
+- 🔔 No account, no signup, no tracking
 - 🛡️ Version gating — blocks outdated app versions
-- 🎨 Premium cyber-organic UI with animated logo
-- 🛑 Cancel button while connecting (orange stop icon)
+- 🎨 Premium cyber-organic UI
 
 ## Publishing and monetization model
 
-- Free mode: the admin Telegram account can publish VLESS links, free users can view them, and ads remain visible.
-- Premium mode: premium users get an ad-free experience and help fund the scraper-bot workflow and related infrastructure.
+- The app is **free and open** — monetization is per-action via **Adivery** (the only ad
+  network): a **picture ad** before Copy, a **rewarded video** before Export and Refresh,
+  plus a persistent banner. If an ad can't load, the action still completes (users are never
+  locked out).
+- The admin Telegram pipeline (scraper → `vless_links` → `servers`) keeps the config list fresh.
 - This plan is captured in [PUBLISH_PLAN.md](PUBLISH_PLAN.md) for future agents and maintainers.
 
 ## Auth email templates (branded)
@@ -55,7 +60,8 @@ See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for full deployment guide.
 ## Architecture
 
 ```
-Flutter App  →  Supabase Edge Functions (JWT auth)  →  Supabase DB
+Android App (config launcher)  →  Supabase public REST (servers)  →  Supabase DB
+   │   copy / export (ads)   →   your VPN client app (v2rayNG, NekoBox, …)
                                                 ↕
                            Chob Group Hub (chobgroup.pages.dev)
                            VLESS server configs in DB
@@ -65,7 +71,7 @@ Flutter App  →  Supabase Edge Functions (JWT auth)  →  Supabase DB
 
 | Component | Path | Role |
 |-----------|------|------|
-| **RootNet app** | `./` | Flutter VPN client (VLESS/V2Ray) |
+| **RootNet app** | `android-app/` | Native Android config launcher (Kotlin + Compose) |
 | **Ingestion Worker** | `vless-worker/` | Cloudflare Worker — receives scraped links, stores in Supabase |
 | **Telegram Scraper** | `vless-scraper/` | Python (Telethon) — watches channels, extracts VLESS links |
 
@@ -90,7 +96,6 @@ See [ROADMAP.md](ROADMAP.md) for the full product roadmap and what's left before
 | Chob Group Hub | https://chobgroup.pages.dev |
 | RootNet Page | https://chobgroup.pages.dev/rootnet.html |
 | GeoIP Tool | https://chobgroup.pages.dev/geoip.html |
-| GeoPoint Studio | https://iran-gis.pages.dev |
 | API (Supabase Edge Function) | https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api |
 | GeoIP (Supabase Edge Function) | https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api |
 | Supabase Dashboard | https://app.supabase.com/project/bprkazfxqmanrybiexnh |

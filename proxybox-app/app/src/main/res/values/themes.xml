@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark cyber-organic base, matching the RootNet design language. -->
+    <style name="Theme.ProxyBox" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0B1A12</item>
+        <item name="android:statusBarColor">#0B1A12</item>
+        <item name="android:navigationBarColor">#0B1A12</item>
+    </style>
+</resources>

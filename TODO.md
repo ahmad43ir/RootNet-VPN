@@ -1,7 +1,44 @@
 # RootNet VPN — TODO & Handoff for Next AI
 
-> 📅 Last updated: August 5, 2026
+> 📅 Last updated: August 13, 2026
 > 🧠 Prepared by: Previous AI session — read this FIRST before making any changes
+
+---
+
+## 🚀 V2.0 — CONFIG LAUNCHER REWRITE (DONE 2026-08-13)
+
+**RootNet is no longer a VPN client.** The built-in Xray engine is removed; the app is now a
+**config launcher**: fetch fresh VLESS/V2Ray configs from Supabase, **Copy** them (Adivery
+interstitial first) or **Export** them (Adivery rewarded video first — also gates Refresh)
+into the user's own client app (v2rayNG / NekoBox / Hiddify…). **Adivery is the only ad
+network** (AdMob + Unity Ads removed in v2.2).
+
+### What changed (v1 → v2.2)
+- **Deleted:** `domain/` (state machine, SessionTimer, engines), `vpn/` (RootNetVpnService,
+  XrayCoreManager, XrayConfig, VpnRuntime, VpnAssets), auth (`AuthRepository`,
+  `SupabaseAuthRepository`, `SecurePrefs`), `FreeQuotaRepository`, `GeoRoutingStore`,
+  `PushService`/`PushNotificationService`/`RootNetMessagingService`, `RootDetectionService`,
+  `AutoConnectBus`, Login/Connect screens, auth deep links, `ConnectionStateTest`,
+  `AdMobManager`/`UnityAdsRepository`/`AdsRepository` (v2.2).
+- **Kept:** version gate, `PinnedHttpClient`, public REST server fetch, `ServerCacheStore`,
+  `ConfigNormalizer` parsers (ping), Crashlytics, theme.
+- **Added:** `AdiveryAdsManager` (interstitial + rewarded + banner — the only network),
+  `ConfigActions` (copy/open), Servers/Settings 2-tab shell, ad-gated Copy/Export/Refresh.
+- **Backend:** version gate bumped to 2.0.0/101 (migration `20260813000001`); endpoints unchanged.
+- **Websites:** rootnet.html / index.html / privacy.html updated.
+- **App version:** 2.0.0 (101) — bump to 2.1.0/102 at release.
+
+### ⚠️ Before release
+1. Adivery placements confirmed filling on-device (banner/interstitial/rewarded all load).
+2. Rebuild + upload the v2.1.0 APK to the release host (GitHub Releases asset `app-release.apk`)
+3. Keep the backend `app_config` version gate in sync with the new versionCode.
+   and update the landing page download link/metadata (currently says v2.0.0).
+3. On-device acceptance: interstitial on Copy, rewarded video on Export, config opens in
+   v2rayNG when installed, banner renders, refresh returns fresh servers.
+
+---
+
+## 🔴 FIXED — Critical Bug History (Read for Context)
 
 ---
 

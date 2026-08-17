@@ -15,6 +15,82 @@
 
 ---
 
+## 0. V2.0 — CONFIG LAUNCHER (SUPERSEDES the engine spec below)
+
+> ⚠️ **Read this section FIRST.** RootNet v2.0 changed the product model. Everything in
+> sections 1–17 below that describes a **built-in VPN engine, accounts/premium, sessions,
+> ads-gated connection, FCM push, notifications, or geo-routing is RETIRED** unless
+> re-stated here. The v2.0 behavior is the source of truth.
+
+### 0.1 Product model
+
+- RootNet is an **Android config launcher**: it shows a live list of VLESS/V2Ray server
+  configs fetched from Supabase and hands them to the user. It **does not** connect,
+  tunnel, or route any traffic itself.
+- **No accounts, no premium, no guest mode, no JWT.** The app is fully public.
+  (2026-08-15: the `premium_only` flag was removed end-to-end — scraper, worker, bot,
+  DB column, RLS — every server is public.)
+- The version gate (below-minimum → Update-Required screen) is **kept**. `PinnedHttpClient`
+  and the public Supabase REST reads are **kept**.
+
+### 0.2 Monetization (v2.3 model — exact rules, Adivery only)
+
+| Action | Ad gate | SDK | On ad unavailable |
+|---|---|---|---|
+| **Copy** (clipboard) + **Export** config in external client | **Interstitial** (`image_rootnet`) on every **3rd** Copy/Export tap (combined counter) — action completes on close | Adivery | **Lock gate**: blur overlay until a rewarded video is watched to the end (no-lockout is GONE in v2.3) |
+| **Refresh** server list | **Rewarded video** — list only re-fetches after a full watch | Adivery | **Lock gate** (stays locked; "Try again" re-runs) |
+| **File-tab download** | Interstitial once per file (first press); rewarded fallback | Adivery | **Lock gate** |
+| Browsing the list | Persistent **banner** (`banner_rootnet`) | Adivery | Empty slot |
+| Ping | None | — | — |
+
+- Reward semantics: interstitial dismissed/closed on the 3rd tap → action completes.
+  Refresh/File = rewarded video **completed** (skipped/failed → no reward, action
+  stays gated). A 60s app-wide interstitial cooldown caps picture ads to one per
+  minute (a tap inside the cooldown completes without an ad).
+- **Global lock rule (v2.3):** a required ad that can't load/show locks the screen
+  behind a blur overlay until a rewarded video is watched to the end — there is NO
+  "continue without ad" escape.
+- **Adivery is the ONLY ad network** (AdMob + Unity Ads removed in v2.2). App ID
+  `73697db8-c7dc-4af2-9f3c-dd422942cf57`; placements `image_rootnet` (interstitial),
+  `video_rootnet` (rewarded), `banner_rootnet` (banner) — constants in
+  `data/ads/AdiveryAdsManager.kt`. Reward granted ONLY from
+  `onRewardedAdClosed(placementId, isRewarded)` when `isRewarded == true`.
+
+### 0.3 Screens & flows
+
+- **Main shell:** 2 tabs — **Servers** (config list + banner ad) and **Settings** (about +
+  recommended clients + privacy).
+- **Server row:** flag, name, country, protocol/format, live TCP ping, 🕗 scrape time;
+  single action **Export** (only when the config is a URI — `rawConfig` contains `://`).
+  ⠇ menu (top right): sort by ping · remove timed-out servers (persisted as hidden) ·
+  restore hidden servers.
+- **Export flow:** every **3rd** tap → Adivery interstitial (image ad) → `ACTION_VIEW` with
+  the raw config URI → Android resolves the user's default client (v2rayNG, NekoBox,
+  Hiddify...). No handler → dialog offering **Copy config** (no client-installed fallback).
+- **Refresh:** always re-fetches fresh servers from the backend (`RemoteServerRepository`,
+  public REST read of `servers`, RLS anon policy).
+
+### 0.4 Removed in v2.0 (do NOT re-add)
+
+- Xray engine, tun2socks, `RootNetVpnService`, `:RunSoLibXrayDaemon` process, `XrayCoreManager`,
+  `XrayConfig`, `VpnRuntime`, `VpnAssets`, `SessionTimer`, `ConnectionViewModel`/`ConnectionState`,
+  `MockVpnEngine`/`VpnEngineFactory`/`XrayVpnEngine`.
+- Auth (`AuthProvider`/`SupabaseAuthRepository`/`MockAuthRepository`/`SecurePrefs`), guest mode,
+  `GeoRoutingStore`, `FreeQuotaRepository`, root-detection banners, `PushService`/FCM,
+  timer notification (`PushNotificationService`), `AutoConnectBus`, auth deep links.
+- Unity Ads rewarded gating of VPN **sessions** (replaced by 0.2).
+- AdMob + Unity Ads (v2.0/2.1 ad providers) — removed in v2.2; Adivery only.
+- `ConfigNormalizer` keeps its **parsers** (used for ping) but the Xray JSON builders
+  (`buildStreamSettings`/`buildXrayConfig`/`buildProxyOutbound`) are deleted.
+
+### 0.5 Versioning & backend
+
+- App: `versionName 2.0.0`, `versionCode 101`. Backend `app_config` row must advertise
+  `latest_version 2.0.0 / latest_build 101` (migration `20260813000001`) so 1.x installs are
+  prompted to update. `rootnet-api` keeps its endpoints (auth-gated ones are simply unused).
+
+---
+
 ## 1. Product Overview
 
 **RootNet** is a production-grade, ad-supported **VPN client** that connects users to
@@ -625,6 +701,10 @@ net→transport, host→transportHost, path→transportPath, alpn`.
 
 ## 10. Ads, Sessions & Monetization (exact rules)
 
+> ⚠️ **RETIRED (v2.2)** — this section describes the v1 VPN-session ad model. The live model is
+> **Adivery-only**: see **§0.2** for the exact Copy/Export/Refresh gates and the v2.3 lock rule.
+> Unity Ads, AdMob, and the session timer are gone — do NOT re-add them.
+
 ### 10.1 Unity Ads configuration
 ```
 Android Game ID: 800111592      // iOS Game ID: set per build
@@ -764,7 +844,8 @@ triggerable manually through `POST /import-vless`.
   first, then Aliyun mirrors (`maven.aliyun.com/repository/google|central|gradle-plugin`),
   then Maven Central. This is why the above version mismatches are fatal instead of just
   slow.
-- Package native Xray binaries into the APK (`useLegacyPackaging = true` for jniLibs).
+- ~~Package native Xray binaries~~ — RETIRED (v2.0): the engine and its `jniLibs/` `.so`
+  files are gone; the release APK is ~1.8 MB. Do NOT re-add engine libs.
 - Release signing from a local `key.properties` (keystore path + aliases + passwords); CI
   falls back to debug signing when absent.
 - Unity Ads requires the Game ID as a manifest meta-data; Crashlytics requires the mapping

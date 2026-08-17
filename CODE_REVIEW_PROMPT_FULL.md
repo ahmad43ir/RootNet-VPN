@@ -1,7 +1,7 @@
 # RootNet + ProxyBox Monorepo — Comprehensive Code Review Prompt
 
 ## Project Overview
-**RootNet** is a native Android VPN app (Kotlin + Jetpack Compose) using Xray/VLESS protocol with Supabase backend, Cloudflare Workers, and a Python Telegram scraper.
+**RootNet** is a native Android **config launcher** (Kotlin + Jetpack Compose) — it serves VLESS/V2Ray configs from Supabase and hands them to the user (Copy / Export). It never tunnels traffic; no accounts, no premium, no JWT. Ads: **Adivery only** (v2.2).
 
 **ProxyBox** is a companion Android app that serves 10 random working MTProto proxies from the shared `scraper_proxies` pool, monetized with AdMob.
 
@@ -18,7 +18,7 @@ Both apps share:
 ### 1. Android Apps (`android-app/`, `proxybox-app/`)
 | App | Purpose | Key Files |
 |-----|---------|-----------|
-| **RootNet** | VPN client (VLESS/VMess/Trojan/SS/WG/SOCKS/SIP) | `android-app/app/src/main/java/com/chobgroup/rootnet/` |
+| **RootNet** | Config launcher (Copy/Export VLESS/V2Ray configs, Adivery ads) | `android-app/app/src/main/java/com/chobgroup/rootnet/` |
 | **ProxyBox** | Free MTProto proxy list (10 random per batch) | `proxybox-app/app/src/main/java/com/chobgroup/proxybox/` |
 
 ### 2. Supabase Edge Functions (`supabase/functions/`)
@@ -50,19 +50,18 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 ### A. Security & Privacy
 1. **No secrets in clients** — Verify `AppConstants.kt` (both apps) has no hardcoded keys; all via env/Worker bindings
 2. **Cert pinning** — `PinnedHttpClient.kt`: pins enforced? Backup pins? Cert rotation handled?
-3. **JWT handling** — `SupabaseAuthRepository`: token refresh, expiry, secure storage (Keystore)?
-4. **RLS policies** — All tables have RLS enabled; only `service_role` bypasses; anon keys only read `servers` (premium filtered)
-5. **Anti-replay** — `PinnedHttpClient` adds `X-Request-Id` + timestamp; `rootnet-api` + `proxy-api` validate via `request_ids` table (60s TTL)?
-6. **Root detection** — `RootDetectionService`: multiple checks (su, magisk, test-keys); blocks VPN on rooted?
-7. **Premium gating** — Server-side (`isPremiumUser` in `_auth.ts`) + client UI filter (`filterServersForAccess`) — both enforced?
-8. **Session string** — `TELEGRAM_SESSION` never logged, never in repo, only in GitHub Secrets/Supabase Vault
+3. **RLS policies** — All tables have RLS enabled; only `service_role` bypasses; anon keys only read `servers` (active — no premium filter)
+4. **Anti-replay** — `PinnedHttpClient` adds `X-Request-Id` + timestamp; `rootnet-api` + `proxy-api` validate via `request_ids` table (60s TTL)?
+5. **Version gate** — RootNet runs it at startup; failure → fail-open (never locks users out)
+6. **Ad lock rule (RootNet)** — required ad unavailable → blur lock gate until a rewarded video is watched to the end (v2.3; no-lockout removed)
+7. **Session string** — `TELEGRAM_SESSION` never logged, never in repo, only in GitHub Secrets/Supabase Vault
 
-### B. VPN Engine & Networking (RootNet)
-1. **Config normalization** — `ConfigNormalizer.kt`: all schemes (vless, vmess, trojan, ss, socks, wireguard, ssh, sip) produce valid `UnifiedConfig`?
-2. **Xray JSON contract** — `buildXrayConfig` / `buildProxyOutbound`: matches Xray-core expectations? Stream settings (ws/grpc/xhttp/httpupgrade/splithttp/tcp + tls/reality)?
-3. **tun2socks pipeline** — `VpnRuntime` / `XrayCoreManager`: SOCKS inbound 127.0.0.1:10807 → Xray → TUN? DNS handling?
-4. **Session timer** — `SessionTimer`: 30/60 min free, premium bypass, ad-gate post-connect, free-connection fallback (2/24h)?
-5. **Ping** — `ServerListScreen.pingServer`: TCP connect to normalized host:port, 5s timeout, cached?
+### B. Config & Ad Flows (RootNet)
+1. **Config normalization** — `ConfigNormalizer.kt`: parsers (vless, vmess, trojan, ss, socks, wireguard, ssh, sip) produce valid `UnifiedConfig` for ping
+2. **Ad gates** — `AdiveryAdsManager`: Copy+Export combined counter → interstitial on every 3rd tap (60s app-wide cooldown); Refresh → rewarded video; reward ONLY from `onRewardedAdClosed(isRewarded=true)`; required ad unavailable → lock gate (v2.3)
+3. **Export flow** — `ACTION_VIEW` on the raw URI → user's client app; no handler → dialog with Copy fallback
+4. **Scrape-time display** — `servers.created_at` threaded scraper → worker → import RPC → `VpnServer.createdAt` → 🕗 h:mm on the card
+5. **Ping** — `ServerListScreen.pingServer`: TCP connect to normalized host:port, 5s timeout, -1 = Timeout chip
 6. **Protocol display** — ServerCard shows `protocol: ${configFormat.displayName}` (VLESS/NPV/SIP/etc.)
 
 ### C. ProxyBox Specific
@@ -84,7 +83,7 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 ### E. Bot & Admin UX
 1. **Rate-limit warnings** — `/scrape` <5min ago: shows wait time + confirm/cancel buttons?
 2. **Running check** — GitHub API queries `in_progress`/`queued` runs for `scrape.yml`?
-3. **Premium toggle** — ServerList: premium users switch Free/Premium via Material3 Switch?
+3. **Server CRUD** — delete always confirms; no premium/normal split (removed 2026-08-15 — every server is public)
 4. **Protocol badge** — ServerCard shows `protocol: ${configFormat.displayName}`?
 5. **SIP support** — Bot parser (`parseFile` → `extractSip`), Worker (`isValidConfigLink`/`extractConfigLinks`), App (`ConfigNormalizer.fromSip`) all aligned?
 6. **Chat state** — `pendingScrapeConfirm` cleared on confirm/cancel/timeout?
@@ -92,7 +91,7 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 ### F. Database & Migrations
 1. **Migrations order** — Check `supabase/migrations/` sequence; no destructive changes without backup?
 2. **Indexes** — `scraper_proxies_active_idx (is_active, last_ok)`, `servers` queries covered?
-3. **Triggers/cron** — `import_pending_vless_links` pg_cron every 30min; `claim_free_connection` RPC?
+3. **Triggers/cron** — `import_pending_vless_links` pg_cron every 30min (propagates `created_at`; no premium flag); `claim_free_connection` RPC is dormant v1 — don't re-enable
 4. **Config formats** — `servers.config_format` accepts `link|json|npv|conf|raw|sip` (migration 20260810000001)?
 5. **RLS** — `scraper_config`, `scraper_proxies` have RLS + no policies (service_role only)?
 6. **CHECK constraints** — `config_format_valid` on `servers` (migration 20260810000004)?
@@ -102,7 +101,7 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 2. **CORS** — Proper headers on all endpoints?
 3. **Rate limiting** — `rootnet-api`: IP (60/min) + user (30/min) via `checkIpRateLimit` RPC? `proxy-api`: IP (60/min)?
 4. **Error handling** — No stack traces leaked; structured JSON errors?
-5. **Import RPC** — `import_pending_vless_links` inserts as `premium_only=true` (scraped → premium)?
+5. **Import RPC** — `import_pending_vless_links` propagates `created_at` (scrape time) into `servers`; no premium flag (removed 2026-08-15)?
 6. **Anti-replay** — `validateAntiReplay()`: timestamp ±30s + `request_ids` table dedup (60s TTL)?
 
 ### H. Build & Deploy
@@ -125,21 +124,22 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 ## Known Patterns to Verify
 
 ### Good Patterns (Should Exist)
-- ✅ Cache-first server list (SharedPreferences → Supabase fallback)
-- ✅ Config normalization before Xray (never pass raw URI to engine)
+- ✅ Cache-first server list (SharedPreferences → Supabase refresh)
+- ✅ Configs ALWAYS from the DB (never hardcoded)
+- ✅ Ad gating with v2.3 lock rule (Adivery, RootNet — required ad unavailable → lock gate)
 - ✅ Deduplication at Worker + DB UNIQUE constraint
 - ✅ Proxy pool with test-on-demand, rotation on failure
 - ✅ pg_cron for automatic import (no manual step)
-- ✅ Free-connection quota server-side (RPC, not client-trusted)
-- ✅ Premium gating both server + client
+- ✅ Scrape timestamps threaded end-to-end
 - ✅ Cert pinning with backup pins
 - ✅ Structured logging (no secrets in logs)
 
 ### Anti-Patterns (Should NOT Exist)
 - ❌ Hardcoded configs/servers in app
-- ❌ Raw URI passed to Xray without normalization
+- ❌ Re-added RootNet engine/auth code (`domain/`, `vpn/`, `SecurePrefs`, `SessionTimer`, FCM)
 - ❌ Secrets in repo or client code
-- ❌ Client-side premium enforcement only
+- ❌ AdMob / Unity Ads in RootNet (Adivery only since v2.2) — ProxyBox AdMob is fine
+- ❌ Ads that lock users out when unavailable
 - ❌ Blocking/long-running operations on UI thread
 - ❌ Unbounded proxy tests or message fetches
 - ❌ Scraper cron < 60 min (GitHub Actions quota)
@@ -165,9 +165,9 @@ Severity: 🔴 Critical (ban/data loss/security) | 🟠 High (functional break) 
 ---
 
 ## Files to Prioritize (High Impact)
-1. `android-app/app/src/main/java/com/chobgroup/rootnet/config/ConfigNormalizer.kt`
+1. `android-app/app/src/main/java/com/chobgroup/rootnet/data/ads/AdiveryAdsManager.kt`
 2. `android-app/app/src/main/java/com/chobgroup/rootnet/data/remote/PinnedHttpClient.kt`
-3. `android-app/app/src/main/java/com/chobgroup/rootnet/vpn/XrayCoreManager.kt`
+3. `android-app/app/src/main/java/com/chobgroup/rootnet/ui/screens/ServerListScreen.kt`
 4. `supabase/functions/rootnet-api/index.ts` + `_auth.ts` + `_rate-limit.ts`
 5. `supabase/functions/proxy-api/index.ts`
 6. `supabase/functions/telegram-bot/_handlers.ts` + `_db.ts` + `_parser.ts` + `_state.ts`
@@ -183,16 +183,16 @@ Severity: 🔴 Critical (ban/data loss/security) | 🟠 High (functional break) 
 ---
 
 ## Test Scenarios to Mentally Simulate
-1. Fresh install → no cache → fetches servers → shows protocol badges → premium toggle works
-2. Free user connects → ad loads → 30 min timer starts → ad-gate on reconnect
-3. Premium user → no ads, unlimited, sees all servers
-4. Scraper runs → 3 msgs/VLESS channel → 1 msg/proxy channel → 3 proxy tests (new first) → dead marked → 3-day retention
-5. Admin presses `/scrape` twice in 2 min → warned, can confirm
-6. Scraper running → admin presses `/scrape` → "already running" message
-7. Proxy fails → deactivated → not re-tested for 12h → cleaned after 3 days
-8. SIP config uploaded via bot → parsed → stored as `config_format=sip` → app normalizes to SOCKS
-9. Network error → cert pinning fails → connection blocked, not degraded
-10. Root detected → VPN blocked, user informed
+1. Fresh install → version gate OK → server list loads (cache-first) → rows show name/flag/protocol/ping + 🕗 scrape time
+2. Tap Copy → Adivery interstitial (or no ad) → config on clipboard
+3. Tap Export → Adivery rewarded video → opens in v2rayNG; no client → "No app found" dialog with Copy fallback
+4. Refresh → rewarded video watched to end → list re-fetches; ads unavailable → refresh still runs
+5. Scraper runs → new links get `created_at` = Telegram message date → import preserves it → app shows local time
+6. Admin presses `/scrape` twice in 2 min → warned, can confirm
+7. Scraper running → admin presses `/scrape` → "already running" message
+8. Proxy fails → deactivated → not re-tested for 12h → cleaned after 3 days
+9. SIP config uploaded via bot → parsed → stored as `config_format=sip` → app normalizes for ping
+10. Network error → cert pinning fails → graceful fallback (never crash, never lock out)
 11. ProxyBox user taps "Get 10 proxies" → interstitial (if >1 min) → fetches 10 MTProto → cards work
 12. ProxyBox refresh → throttled interstitial → new batch
 

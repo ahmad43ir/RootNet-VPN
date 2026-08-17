@@ -1,0 +1,190 @@
+================================================================================
+ RootNet — COMPREHENSIVE REVIEW FINDINGS (round 4)
+ Date: 2026-08-15
+ Scope: Full pipeline — vless-scraper (main.py, proxy_pool.py, cleanup_chats.py),
+        scrape.yml, vless-worker, all Supabase migrations, telegram-bot handlers
+        + _db.ts, rootnet-api, the Android app's read paths (RemoteServerRepository,
+        RemoteVpnFileRepository, ServerListScreen ads), cross-checked against
+        AGENTS.md + prior findings (rounds 2–3).
+ Verified: py_compile OK (main.py / proxy_pool.py / cleanup_chats.py),
+           node --check OK (vless-worker/src/index.js),
+           node --experimental-strip-types --check OK on telegram-bot + rootnet-api,
+           android-app `:app:compileDebugKotlin` BUILD SUCCESSFUL,
+           secrets sweep clean (no keys in tracked files / .env.example placeholders only).
+ Severity: 🔴 Critical | 🟠 High | 🟡 Medium | 🔵 Low
+================================================================================
+ NOTE: All five findings below were FIXED in this round (see the FIXED section
+       for what shipped). Deployment of the fixes (migration apply + worker/bot/
+       api redeploy) is still pending — see DEPLOY section.
+
+--------------------------------------------------------------------------------
+ 🟠 HIGH
+--------------------------------------------------------------------------------
+
+🟠 Pipeline: every scraped config was invisible to the app — `premium_only=true`
+   hardcoded for ALL scraped links (v1 leftover) — FIXED
+   Issue:
+     vless-scraper/main.py (persistent `_handle_message` + run-once `scrape_once`)
+     set premium_only=True on every scraped link; the worker honored it; the
+     import RPC copied it into `servers`. But the v2 app reads `servers` as anon,
+     and RLS (20260721000001) only exposes `is_active=true AND premium_only=false`.
+     With no accounts/JWT in v2, NO user could ever see a scraped config — only
+     manual bot uploads fed the app. Directly contradicted the bot copy ("configs
+     … flow straight into the app").
+   Fix: Removed the premium concept END-TO-END (scraper + worker + bot + app +
+     DB + rootnet-api + docs) — see the FIXED section. All servers are now public.
+   References: main.py:607/899 (old); RLS 20260721000001; migration
+     20260815000001_remove_premium_only.sql (new).
+
+🟠 Scraper: cursor + limit silently skipped messages forever on busy channels — FIXED
+   Issue:
+     scrape_once fetched min_id=cursor, limit=3 and advanced the cursor to
+     messages[0].id (the NEWEST). If a channel posted >3 messages between runs,
+     the older ones were never read and the cursor jumped past them — permanent
+     data loss on firehose channels.
+   Fix: New `_fetch_new_messages()` — top batch, then walk BACKWARD (Telethon
+     reverse=True, ascending) through the gap until a short/empty batch proves
+     the channel is caught up; cursor advances to the newest id only then, else
+     to the top of the drained chunk (next run resumes there). New
+     RUN_ONCE_MAX_MESSAGES_TOTAL (default 30) caps total reads per channel per
+     run — matching AGENTS.md's ≤30 msgs/channel. Verified with a mocked-Telethon
+     simulation: 10-run firehose (reads never exceed 30/run, cursor monotonic,
+     no skips), full-drain reaches the top (508/508), 6 edge cases pass; the
+     sim caught a real off-by-one (Telethon max_id is EXCLUSIVE — the initial
+     bound skipped the message right below the top batch; fixed).
+   References: main.py `_fetch_new_messages`; scrape.yml RUN_ONCE_MAX_MESSAGES_TOTAL.
+
+🟠 Scraper: FloodWait was capped at 300s and then continued — FIXED
+   Issue:
+     Both FloodWaitError handlers slept min(e.seconds, 300) then `continue`.
+     AGENTS.md says honor FloodWait (sleep_for(seconds)), never catch-and-continue:
+     continuing after a truncated sleep just re-triggers the wait, and a full
+     long sleep blows the 10-min Actions timeout.
+   Fix: New FLOOD_WAIT_ABORT_SECONDS (default 120, env-tunable) + async
+     `_handle_flood_wait()`: waits below the threshold are slept in FULL; waits
+     ≥ threshold raise FloodWaitAbort → scrape_once breaks out of the remaining
+     channels and run_once_mode logs a clear message + exits code 2 (visible
+     failure in Actions, no wasted minutes). Persistent mode untouched (no job
+     timeout budget there). refresh_pool handles FloodWait internally — verified
+     the outer handler only needs FloodWaitAbort.
+   References: main.py FloodWaitAbort / _handle_flood_wait; run_once_mode.
+
+🟠 Workflow: bot-managed channels could never run without the CHANNELS secret — FIXED
+   Issue:
+     _validate_config() hard-failed on empty CHANNELS, and scrape.yml skipped the
+     run entirely when CHANNELS was unset (TG_READY gate). But at runtime
+     get_vless_channels() prefers scraper_config.vless_channels (bot /addchannel).
+     An admin who only used /addchannel got ZERO runs.
+   Fix: _validate_config() now only requires CHANNELS when the storage backend
+     can't supply a list (create_storage().supports_config() — true for Supabase,
+     false for local JsonStorage); scrape.yml TG_READY no longer requires
+     CHANNELS != ''; header comment + "No Telegram credentials yet" message
+     updated. Also added `set -o pipefail` to the run step so a scraper error
+     marks the job failed instead of being masked by `tee`.
+   References: main.py _validate_config; scrape.yml TG_READY / run step.
+
+--------------------------------------------------------------------------------
+ 🟡 MEDIUM
+--------------------------------------------------------------------------------
+
+🟡 Pipeline: REST budget creep from per-message vpn_files calls — FIXED
+   Issue:
+     Every document message triggered 2 REST calls (vpn_files GET check + POST
+     insert) in `_upload_attachment_file`, EVEN when the document yielded no
+     config links. On document-heavy runs that's 30+ REST calls on top of the
+     normal budget — AGENTS.md targets ≤ ~20 per run.
+   Fix: `_upload_attachment_file` now runs only when the attachment actually
+     yielded config links — both call sites guard on `file_links` (after the
+     merged-links early return). Files with no extractable configs are never
+     downloaded for upload nor GET/POST'd. Also added `.npvt` to
+     CONFIG_EXTENSIONS so parse coverage matches the upload list (was: uploaded
+     but never scanned). py_compile OK.
+   References: main.py `_upload_attachment_file` + both call sites; AGENTS.md
+     Supabase budget.
+
+--------------------------------------------------------------------------------
+ 🔵 LOW
+--------------------------------------------------------------------------------
+
+🔵 scrape.yml report step — the run-once summary regex matches the summary line
+   format; if the scraper's summary line ever changes, the bot report silently
+   degrades to "(details in the Actions log)". Acceptable; consider asserting on
+   the summary line format in the scraper's own output.
+
+🔵 scrape.yml — `chat_id` input is unvalidated in the report step; a malformed
+   value just fails the send (caught). Cosmetic.
+
+--------------------------------------------------------------------------------
+ ✅ FIXED IN THIS ROUND (verified) — do NOT re-fix
+--------------------------------------------------------------------------------
+- Premium/normal concept removed END-TO-END:
+    • vless-scraper/main.py — premium_only removed from payloads, SupabaseStore
+      insert_link, _insert_direct, every call site (persistent + run-once).
+    • vless-worker/src/index.js — premiumOnly removed from insertLink + both
+      /webhook handlers; the /premium|vip/i text-sniffing heuristic removed
+      (could hide a free config just because the channel text mentioned the word).
+    • telegram-bot — one 📤 Upload + one 🟢 Servers list; normal/premium split,
+      👑 badges, "upload as premium" mode, premium help text all gone (_handlers.ts,
+      _db.ts, README).
+    • Android app — VpnServer.isPremium removed; RemoteServerRepository no longer
+      selects/maps premium_only; ServerCacheStore drops the cached flag; PREMIUM
+      chip gone from ServerListScreen.
+    • DB — new migration 20260815000001_remove_premium_only.sql: drops
+      premium_only from servers + vless_links, rewrites servers RLS to plain
+      `is_active = true`, recreates the import RPC without the flag; seed.sql
+      INSERTs fixed to match.
+    • rootnet-api — /servers + /public/servers no longer filter/return
+      premium_only; isPremiumUser() deleted from _auth.ts.
+    • Docs/skills — CODE_REVIEW_PROMPT(.md/_FULL), SERVER_MANAGEMENT, ROADMAP,
+      PROJECT_CONTEXT, app_clone §0, SUPABASE_REFERENCE, skills (android-security,
+      supabase-edge-functions, ui-ux, networking-api) updated. Historical docs
+      (old applied migrations, prior findings logs) keep original text on purpose.
+- Cursor data-loss fix + RUN_ONCE_MAX_MESSAGES_TOTAL (see 🟠 #2) — simulated and
+  verified; temp test harness removed after passing.
+- FloodWait abort policy (see 🟠 #3).
+- Workflow fixes: pipefail, CHANNELS optionality, TG_READY gate (see 🟠 #4).
+- Ad-model docs aligned with the real v2.3 ServerListScreen behavior (combined
+  Copy/Export 3rd-tap interstitial + global lock gate): monetization skill,
+  rootnet-vpn skill, app_clone §0.2, both review prompts, SettingsScreen help
+  text ("Every 3rd Copy/Export tap").
+- Syntax/build verification for every change: py_compile ✓, node --check ✓,
+  TS strip-type check on edge functions ✓, :app:compileDebugKotlin ✓,
+  scrape.yml parses ✓.
+
+--------------------------------------------------------------------------------
+ ✅ VERIFIED GOOD (held up under review — do NOT re-fix)
+--------------------------------------------------------------------------------
+- Webhook auth (X-Webhook-Key) on all /webhook* + /cleanup endpoints.
+- SECURITY DEFINER RPCs revoked from PUBLIC/anon/authenticated, granted to
+  service_role only; scraper_config / scraper_proxies / vpn_files have RLS +
+  no policies (service_role only).
+- Proxy-pool caps (≤10–15 tests/run, concurrency ≤4) + message limits
+  (≤30 msgs/channel) within AGENTS.md; dead-proxy 3-day retention intact.
+- No secrets in the client, .env.example, or tracked files.
+- Round-2/3 fixes intact (anti-replay wiring, SIP pipeline, webhook 200ms spacing).
+
+--------------------------------------------------------------------------------
+ DEPLOY / OPERATIONS (production changes — NOT run; need explicit go-ahead)
+--------------------------------------------------------------------------------
+ 1. Apply the migration (dry-run first, per AGENTS.md):
+      npx supabase db push --dry-run
+    After applying, existing premium_only=true rows simply become public
+    (intended outcome).
+ 2. Redeploy the worker so the new payload shape goes live:
+      cd vless-worker && npx wrangler deploy
+ 3. Redeploy the edge functions:
+      npx supabase functions deploy telegram-bot
+      npx supabase functions deploy rootnet-api
+ 4. The scraper + workflow changes need NO deploy — the next /scrape run picks
+    them up from the repo.
+
+--------------------------------------------------------------------------------
+ TOP PRIORITIES (in order)
+--------------------------------------------------------------------------------
+ 1. Deploy the round-4 changes (migration → worker → functions) — the code is
+    fixed but production still runs the old premium-only behavior.
+ 2. (DONE) vpn_files REST-budget creep fixed — the only open code finding is
+    now closed; remaining items are deploy + optional hardening.
+ 3. Optional hardening from prior rounds if still open: request_ids TTL cleanup
+    cron (20260810000002 comment), /setmin vs /setlatest sanity check.
+================================================================================

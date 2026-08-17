@@ -7,6 +7,13 @@
 
 ---
 
+## 📦 PROJECT SCOPE — ROOTNET ONLY
+
+This repo is **RootNet only** (VPN config launcher, Supabase project `bprkazfxqmanrybiexnh`).
+ProxyBox (`proxybox-app/`) stays in this repo but is its own app with its own secrets.
+
+---
+
 ## ⚠️ THE WARN-FIRST RULE (MOST IMPORTANT)
 
 Before you do **anything** on this list, STOP and warn the user in plain terms: what you're about

@@ -1,5 +1,12 @@
 # RootNet Publishing and Monetization Plan
 
+> ## 🚀 v2.2 (2026-08-13) — CONFIG LAUNCHER, ADIVERY-ONLY
+> Product model changed: no premium tiers, no accounts. Monetization is per-action via
+> **Adivery** (the only ad network): interstitial before **Copy**, rewarded video before
+> **Export** and **Refresh**, persistent banner. Sections 1–4 below (free/premium split) are
+> **retired**. Release runbook (§5) applies with the v2.2.0 APK — the download link still
+> needs a new `app-release.apk` uploaded to GitHub Releases (or R2 once enabled).
+
 ## 1. Product model
 
 ### Free mode
@@ -34,6 +41,12 @@
 
 ## 5. Release runbook (APK hosting + landing page deploy)
 
+> 📝 **Signing note (2026-08-13):** RootNet and ProxyBox currently share one signing key
+> (`rootnet-release.jks`, same alias). Fine for internal distribution, but if either app
+> is ever published to the Play Store it needs its OWN upload key — Play disallows reusing
+> a signing key across different packages. Create a separate keystore before any store
+> submission.
+
 Status as of 2026-08-06 (Phase 11 checklist item "Landing page + download link + privacy policy page"):
 
 - Landing page and privacy policy are **LIVE** and working:
@@ -54,8 +67,8 @@ Status as of 2026-08-06 (Phase 11 checklist item "Landing page + download link +
 - **Supabase Storage** — free plan has a hard **50 MB per-file cap**. Both a 60 MB test upload and any
   bucket `file_size_limit` above 50 MB are rejected (HTTP 413 `EntityTooLarge`). The 204 MB APK cannot
   be hosted there without upgrading to Pro ($25/mo).
-- **APK shrinkage** — Xray `.so` files are stored uncompressed (`useLegacyPackaging=true`); even an
-  arm64-v8a-only build is ~62 MB. Cannot get under the 50 MB cap.
+- ~~APK shrinkage~~ — RESOLVED (2026-08-13 perf pass): the engine `.so` files were removed
+  with the VPN engine. The signed release APK is now **~1.8 MB**, far under the 50 MB cap.
 - **Cloudflare Pages** — 25 MiB per-file upload cap. No.
 - **Making the GitHub repo public** — rejected (repo contains secrets).
 

@@ -1,5 +1,24 @@
 # 🗺️ RootNet — Product Roadmap
 
+## 🚀 V2.0 — CONFIG LAUNCHER (2026-08-13, DONE)
+
+> ⚠️ **Major pivot:** RootNet v2.0 is a **config launcher**, not a VPN client.
+> The built-in Xray engine, auth/premium, session timer, and FCM push are **gone**.
+
+- [x] **Engine removed** — `domain/` + `vpn/` packages deleted; no tunnel, no daemon process, no geo-routing
+- [x] **Auth removed** — no login, no guest mode, no premium tiers; app opens straight to the config list
+- [x] **Monetization reworked (v2.2)** — Adivery is the ONLY network: Copy gated by interstitial, Export + Refresh gated by rewarded video, persistent banner; no-lockout fallback kept
+- [x] **Config list** — cache-first, live refresh, TCP ping; per-server **Copy** / **Export** (opens in the user's default client: v2rayNG, NekoBox, Hiddify…)
+- [x] **Version gate kept** — 2.0.0/101 (migration `20260813000001` + `rootnet-api` fallback updated)
+- [x] **Websites + docs + skills** updated to the new model
+- [ ] Adivery placements verified filling on-device (banner/interstitial/rewarded confirmed loading 2026-08-13)
+
+> See `app_clone.md` §0 (v2.0 supersession) for the authoritative spec.
+
+---
+
+## 📅 Pre-v2.0 (original VPN model — history)
+
 > Combined project home for the **RootNet VPN stack** (3 components that work together):
 >
 > | # | Component | Path | What it does |
@@ -66,8 +85,8 @@
 
 ## 💳 Monetization direction
 
-- Free users watch a rewarded ad to unlock a 30-min VPN session (ad gate only applies when ads are actually available — see `RewardedAdService.isAvailable`).
-- Premium users (JWT `app_metadata.isPremium`, granted server-side) get premium servers and no ads.
+- **Per-action Adivery ads** (the only network): interstitial on every 3rd Copy/Export tap, rewarded video before Refresh, persistent banner. Ads unavailable → the action still completes (no lockout).
+- **No premium, no accounts** — the `premium_only` flag was removed end-to-end (2026-08-15); every config is public.
 - The publishing plan is documented in [PUBLISH_PLAN.md](PUBLISH_PLAN.md) for future agents and release planning.
 
 ---
@@ -86,7 +105,6 @@
 ## 🧪 Nice-to-Have / Future
 
 - [ ] Apple Sign-In (Supabase supports it; add button alongside Google)
-- [ ] Premium tier gating in-app (purchase flow) — `isPremium` already checked on `/servers`
 - [ ] Notification tap → navigate to specific screen (data payload routing)
 - [ ] Land on `/servers` — dedupe with `source_channel` badges ("Community")
 - [x] CI/CD — GitHub Actions: `flutter analyze` + `flutter test` on push/PR, release APK on tags (`ci.yml`) (needs `GOOGLE_SERVICES_JSON` secret for tag builds)

@@ -119,41 +119,31 @@
       font-size: 12px; color: rgba(224, 224, 224, 0.6);
     }
 
-    /* ─── PROJECTS ─── */
-    .projects-grid { display: grid; gap: 28px; max-width: 800px; margin: 0 auto; }
-    .project-card {
-      background: rgba(10, 15, 30, 0.6); border: 1px solid rgba(136, 136, 255, 0.08);
-      border-radius: 20px; padding: 36px 32px; backdrop-filter: blur(10px);
-      transition: border-color 0.3s, transform 0.3s;
-      display: flex; gap: 28px; align-items: flex-start;
+    /* ─── PROJECTS (short ads) ─── */
+    .projects-grid { display: grid; gap: 16px; max-width: 720px; margin: 0 auto; }
+    .ad-card {
+      display: flex; align-items: center; gap: 20px;
+      background: rgba(10, 15, 30, 0.6); border: 1px solid rgba(136, 136, 255, 0.1);
+      border-radius: 16px; padding: 18px 22px; backdrop-filter: blur(10px);
+      transition: border-color 0.3s, transform 0.3s, background 0.3s;
     }
-    .project-card:hover { border-color: rgba(136, 136, 255, 0.2); transform: translateY(-3px); }
-    .project-icon {
-      width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
+    .ad-card:hover { border-color: rgba(136, 136, 255, 0.35); transform: translateX(4px); background: rgba(10, 15, 30, 0.8); }
+    .ad-icon {
+      width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
-    .project-icon.rootnet { background: rgba(57, 255, 20, 0.1); }
-    .project-icon.geoip { background: rgba(255, 200, 50, 0.1); }
-    .project-icon.geopoint { background: rgba(100, 200, 255, 0.1); }
-    .project-body { flex: 1; }
-    .project-body h3 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .project-body .subtitle { font-size: 13px; color: rgba(224, 224, 224, 0.4); margin-bottom: 12px; }
-    .project-body p { font-size: 14px; color: rgba(224, 224, 224, 0.6); line-height: 1.7; margin-bottom: 16px; }
-    .project-links { display: flex; gap: 12px; flex-wrap: wrap; }
-    .project-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 18px; border-radius: 10px;
-      font-size: 13px; font-weight: 600; transition: all 0.3s;
+    .ad-icon.rootnet { background: rgba(57, 255, 20, 0.1); }
+    .ad-icon.proxybox { background: rgba(76, 255, 136, 0.1); }
+    .ad-icon.geoip { background: rgba(255, 200, 50, 0.1); }
+    .ad-icon.geopoint { background: rgba(100, 200, 255, 0.1); }
+    .ad-body { flex: 1; min-width: 0; }
+    .ad-body h3 { font-size: 17px; font-weight: 700; }
+    .ad-body p { font-size: 13px; color: rgba(224, 224, 224, 0.5); margin-top: 3px; line-height: 1.5; }
+    .ad-cta {
+      flex-shrink: 0; font-size: 13px; font-weight: 700; color: #8888FF;
+      white-space: nowrap; transition: transform 0.3s;
     }
-    .project-link.primary {
-      background: #8888FF; color: #070B14;
-    }
-    .project-link.primary:hover { box-shadow: 0 0 25px rgba(136, 136, 255, 0.3); }
-    .project-link.secondary {
-      border: 1px solid rgba(136, 136, 255, 0.2); color: rgba(224, 224, 224, 0.7);
-    }
-    .project-link.secondary:hover { border-color: #8888FF; background: rgba(136, 136, 255, 0.06); }
+    .ad-card:hover .ad-cta { transform: translateX(3px); }
 
     /* ─── FOOTER ─── */
     footer {
@@ -226,7 +216,7 @@
           <h3>AI-Powered Development</h3>
           <p>
             We use AI coding agents to rapidly prototype, build, and deploy full-stack
-            applications. From Flutter mobile apps to Cloudflare Workers — AI handles
+            applications. From native Android apps to Cloudflare Workers — AI handles
             the heavy lifting while we guide the vision.
           </p>
           <div class="tech-tags">
@@ -255,96 +245,58 @@
     </div>
   </section>
 
-  <!-- ─── PROJECTS ─── -->
+  <!-- ─── PROJECTS (short ads) ─── -->
   <section class="section" id="projects">
     <div class="container">
       <h2 class="section-title">Our <span>Projects</span></h2>
+      <p class="section-sub" style="font-size:14px; margin-bottom:32px;">Each tool has its own dedicated page — tap through to learn more or download.</p>
 
       <div class="projects-grid">
 
-        <!-- RootNet -->
-        <div class="project-card fade-in">
-          <div class="project-icon rootnet">🌿</div>
-          <div class="project-body">
+        <a href="/rootnet.html" class="ad-card fade-in">
+          <div class="ad-icon rootnet">🌿</div>
+          <div class="ad-body">
             <h3>RootNet</h3>
-            <div class="subtitle">Secure VPN · Flutter + Cloudflare + Supabase</div>
-            <p>
-              A full-featured Android VPN app powered by VLESS/V2Ray protocol.
-              Features ad-gated 30-minute sessions, real-time speed display,
-              global server network managed via Supabase, Cloudflare Workers API,
-              and a cyber-organic dark UI. Built entirely with AI assistance.
-            </p>
-            <div class="project-links">
-              <a href="/rootnet.html" class="project-link primary">
-                🌐 Learn More
-              </a>
-              <a href="https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api/health" target="_blank" class="project-link secondary">
-                🔌 API Health
-              </a>
-            </div>
-            <div class="tech-tags" style="margin-top:12px;">
-              <span class="tech-tag">Flutter</span>
-              <span class="tech-tag">VLESS</span>
-              <span class="tech-tag">Supabase Edge Functions</span>
-              <span class="tech-tag">Supabase</span>
-              <span class="tech-tag">Firebase</span>
-            </div>
+            <p>Fresh VLESS/V2Ray configs for your VPN client — copy or export, no account.</p>
           </div>
-        </div>
+          <div class="ad-cta">Learn More →</div>
+        </a>
 
-        <!-- GeoIP -->
-        <div class="project-card fade-in">
-          <div class="project-icon geoip">🌍</div>
-          <div class="project-body">
-            <h3>GeoIP Service</h3>
-            <div class="subtitle">IP Geolocation API · Supabase Edge Function</div>
-            <p>
-              A lightweight Supabase Edge Function that takes an IP address
-              and returns its country name and country code. Uses ip-api.com as fallback,
-              caches results for 24 hours, and supports CORS.
-            </p>
-            <div class="project-links">
-              <a href="/geoip.html" class="project-link primary">
-                🌍 Learn More
-              </a>
-              <a href="https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/geo-api?ip=8.8.8.8" target="_blank" class="project-link secondary">
-                ⚡ Test IP Lookup
-              </a>
-            </div>
-            <div class="tech-tags" style="margin-top:12px;">
-              <span class="tech-tag">Supabase Edge Functions</span>
-              <span class="tech-tag">ip-api.com</span>
-              <span class="tech-tag">TypeScript</span>
-              <span class="tech-tag">Serverless</span>
-            </div>
+        <a href="/proxybox.html" class="ad-card fade-in">
+          <div class="ad-icon proxybox">📦</div>
+          <div class="ad-body">
+            <h3>ProxyBox</h3>
+            <p>Free MTProto proxies for Telegram — 10 picks per batch, tap to open.</p>
           </div>
-        </div>
-        <!-- GeoPoint Studio -->
-        <div class="project-card fade-in">
-          <div class="project-icon geopoint">🗺️</div>
-          <div class="project-body">
+          <div class="ad-cta">Learn More →</div>
+        </a>
+
+        <a href="/geoip.html" class="ad-card fade-in">
+          <div class="ad-icon geoip">🌍</div>
+          <div class="ad-body">
+            <h3>GeoIP</h3>
+            <p>Free IP geolocation API — pass an IP, get the country and flag.</p>
+          </div>
+          <div class="ad-cta">Learn More →</div>
+        </a>
+
+        <a href="https://iran-gis.pages.dev" class="ad-card fade-in">
+          <div class="ad-icon geopoint">🗺️</div>
+          <div class="ad-body">
             <h3>GeoPoint Studio</h3>
-            <div class="subtitle">UTM WGS84 Zone 39N → Excel / KML / KMZ · Cloudflare Pages</div>
-            <p>
-              Paste coordinates, upload a picture (auto crop + OCR), or load an Excel file —
-              GeoPoint Studio turns UTM WGS84 Zone 39N points into ArcMap-ready Excel files,
-              KML/KMZ polygons, and GeoJSON, all in the browser. Includes a map preview,
-              bilingual EN/FA UI, and a wallet with referrals.
-            </p>
-            <div class="project-links">
-              <a href="https://iran-gis.pages.dev" class="project-link primary">
-                🗺️ Open GeoPoint Studio
-              </a>
-            </div>
-            <div class="tech-tags" style="margin-top:12px;">
-              <span class="tech-tag">Leaflet</span>
-              <span class="tech-tag">proj4</span>
-              <span class="tech-tag">SheetJS</span>
-              <span class="tech-tag">Tesseract.js</span>
-              <span class="tech-tag">Supabase</span>
-            </div>
+            <p>UTM WGS84 points to Excel / KML / KMZ — right in the browser.</p>
           </div>
-        </div>
+          <div class="ad-cta">Open App →</div>
+        </a>
+
+        <a href="https://iran-elections.pages.dev" class="ad-card fade-in">
+          <div class="ad-icon" style="background: rgba(136, 136, 255, 0.1);">🗳️</div>
+          <div class="ad-body">
+            <h3>Iran Elections</h3>
+            <p>Comprehensive Iranian election information platform — candidates, elections, and user engagement.</p>
+          </div>
+          <div class="ad-cta">Open App →</div>
+        </a>
 
       </div>
     </div>

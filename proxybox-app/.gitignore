@@ -1,0 +1,22 @@
+.gradle/
+build/
+
+# Release signing — NEVER commit the keystore or its credentials
+keystore.properties
+keystore//
+local.properties
+.idea/
+*.iml
+.DS_Store
+/captures
+.externalNativeBuild
+.cxx
+
+# Release signing — NEVER commit the keystore or its credentials
+keystore.properties
+keystore/
+
+# Secrets & credentials — NEVER commit
+.env
+.env.*
+agent_only.txt

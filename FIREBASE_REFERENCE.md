@@ -1,7 +1,12 @@
 # 🔥 RootNet Firebase Reference
 
-> **Last updated:** July 22, 2026
+> **Last updated:** August 13, 2026
 > **Purpose:** Guide for future assistants to understand and work with Firebase alongside Supabase
+>
+> 🚀 **v2.2 (2026-08-13):** RootNet is a **config launcher** — **FCM push, Auth, and the
+> Flutter app are gone**. Firebase is now **Crashlytics only** (release builds). Everything
+> below describing auth, FCM push delivery, `firebase-messaging`, or the Flutter SDK is
+> **retired** — do not re-add. Live truth: `android-app/` + `app_clone.md` §0.
 
 ---
 

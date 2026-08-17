@@ -343,7 +343,7 @@
     <div class="container">
       <h1>Privacy <span>Policy</span></h1>
       <p>How RootNet handles your data, your privacy, and your security.</p>
-      <div class="last-updated">Last updated: July 21, 2026</div>
+      <div class="last-updated">Last updated: August 13, 2026</div>
     </div>
   </section>
 
@@ -358,7 +358,7 @@
           RootNet ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (collectively, the "Service").
         </p>
         <p>
-          RootNet is a <strong>VLESS/V2Ray proxy application</strong> that routes your internet traffic through encrypted tunnels to servers worldwide. We are designed with <strong>privacy as a foundational principle</strong> — we do not log, monitor, or store your online activity.
+          RootNet is a <strong>VLESS/V2Ray config launcher</strong> — it does not route your internet traffic. The app delivers fresh server configs that you <strong>copy</strong> or <strong>export into your own VPN client app</strong> (v2rayNG, NekoBox, Hiddify, etc.). We are designed with <strong>privacy as a foundational principle</strong> — we do not log, monitor, or store your online activity, and your traffic never passes through RootNet servers.
         </p>
         <p>
           By using RootNet, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use the Service.
@@ -381,8 +381,8 @@
           <tbody>
             <tr>
               <td><strong>Account Info</strong></td>
-              <td>Email address (and optionally, display name)</td>
-              <td>Authentication, account management, password reset</td>
+              <td>None — RootNet v2.0 requires no account</td>
+              <td>N/A</td>
             </tr>
             <tr>
               <td><strong>Device Info</strong></td>
@@ -391,8 +391,8 @@
             </tr>
             <tr>
               <td><strong>Usage Data</strong></td>
-              <td>Connection timestamps (session start/end), server selected</td>
-              <td>Session timer enforcement, service optimization</td>
+              <td>Server list requests (refresh)</td>
+              <td>Delivering fresh configs</td>
             </tr>
             <tr>
               <td><strong>Payment Data</strong></td>
@@ -403,7 +403,7 @@
         </table>
 
         <div class="highlight-box">
-          <p><strong>✅ We do NOT collect:</strong> Your browsing history, DNS queries, IP addresses (beyond connection routing), content of your traffic, or any personally identifiable information beyond what is listed above. RootNet operates a <strong>strict no-logs policy</strong> for all VPN/proxy traffic.</p>
+          <p><strong>✅ We do NOT collect:</strong> Your browsing history, DNS queries, IP addresses, content of your traffic, or any personally identifiable information beyond what is listed above. RootNet operates a <strong>strict no-logs policy</strong> — and because the app never tunnels your traffic, there is nothing to log.</p>
         </div>
       </div>
 
@@ -412,10 +412,10 @@
         <h2><span class="num">3</span> How We Use Your Information</h2>
         <p>We use the collected information for the following purposes:</p>
         <ul>
-          <li><strong>To Provide the Service</strong> — Authenticate your account, connect you to VLESS servers, manage your VPN session timer, and display connection status.</li>
-          <li><strong>To Serve Ads</strong> — Show rewarded video ads via Google AdMob that grant you VPN session time. Ad personalization is controlled by Google's ad services; you can opt out of ad personalization in your device settings.</li>
-          <li><strong>To Ensure Security</strong> — Check app version compatibility, prevent unauthorized access, enforce rate limits, and detect replay attacks.</li>
-          <li><strong>To Communicate</strong> — Send password reset emails and critical service notifications (we do not send marketing emails).</li>
+          <li><strong>To Provide the Service</strong> — Fetch and display the server config list, and hand configs to your installed client app.</li>
+          <li><strong>To Serve Ads</strong> — Show a picture ad (interstitial) on every third config export, a rewarded video before refreshing the list, and a banner on the config list. Ads are served by Adivery (the only ad network in the app). Ad personalization is controlled by the ad network; you can opt out of ad personalization in your device settings.</li>
+          <li><strong>To Ensure Security</strong> — Check app version compatibility, enforce rate limits, and detect replay attacks.</li>
+          <li><strong>To Deliver Updates</strong> — A version-gate check at app start tells you when a newer build is required. We do not send marketing emails.</li>
           <li><strong>To Improve the Service</strong> — Analyze aggregate usage patterns to optimize server selection and app performance.</li>
         </ul>
       </div>
@@ -436,24 +436,24 @@
           <tbody>
             <tr>
               <td><strong>Supabase</strong></td>
-              <td>Authentication &amp; Database</td>
-              <td>Email address, hashed password, account metadata</td>
+              <td>Database</td>
+              <td>Server config list + scrape timestamps (public reads only; no accounts)</td>
             </tr>
             <tr>
-              <td><strong>Google AdMob</strong></td>
-              <td>Rewarded video ads</td>
+              <td><strong>Adivery</strong></td>
+              <td>Ads (interstitial, rewarded video, banner)</td>
               <td>Android advertising ID, device info, ad interaction data</td>
             </tr>
             <tr>
               <td><strong>Cloudflare</strong></td>
-              <td>API hosting (Workers), CDN (Pages)</td>
+              <td>Edge functions (Workers), CDN (Pages)</td>
               <td>IP address (temporarily for request routing), request metadata</td>
             </tr>
           </tbody>
         </table>
 
         <p>
-          Each provider is contractually bound to use your data only as necessary to provide their service and to maintain appropriate security measures. Google AdMob's data handling is governed by <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.
+          Each provider is contractually bound to use your data only as necessary to provide their service and to maintain appropriate security measures. Adivery's SDK data handling is governed by its <a href="https://docs.adivery.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
         </p>
       </div>
 
@@ -465,8 +465,8 @@
         </p>
         <ul>
           <li><strong>Encryption in Transit</strong> — All communication between the app, our API (Cloudflare Workers), and Supabase is encrypted via TLS 1.3.</li>
-          <li><strong>Encrypted Tunnels</strong> — Your internet traffic is encrypted using VLESS/V2Ray protocol with AES-256-CBC encryption.</li>
-          <li><strong>JWT Authentication</strong> — Access to our API requires a valid, time-limited JWT token verified against cached JWKS keys.</li>
+          <li><strong>No Traffic Tunneling</strong> — RootNet never routes your internet traffic; configs are handed to the VPN client app you already use, so there is nothing to log or monitor.</li>
+          <li><strong>No Accounts</strong> — The app is fully public; there are no credentials, sessions, or JWT tokens to compromise.</li>
           <li><strong>Rate Limiting &amp; Replay Protection</strong> — Our API enforces strict rate limits and request deduplication to prevent abuse.</li>
           <li><strong>No Client-Side Secrets</strong> — Sensitive data (VLESS server configs, service keys) are never stored in the app; they are fetched on-demand from our secured API.</li>
         </ul>
@@ -482,13 +482,12 @@
           We retain your personal information only as long as necessary to fulfill the purposes described in this policy:
         </p>
         <ul>
-          <li><strong>Account data</strong> (email, auth metadata) — Retained until you delete your account or request removal.</li>
-          <li><strong>VLESS server configs</strong> — Not stored by us; they are fetched in real-time from our secured database and are never cached on the device beyond the current session.</li>
-          <li><strong>Session logs</strong> — Connection timestamps are ephemeral and not persisted beyond the current app session.</li>
-          <li><strong>Advertising data</strong> — Governed by Google AdMob's retention policies.</li>
+          <li><strong>Server config list</strong> — Publicly served from our database; a copy is cached on your device (SharedPreferences) so the list loads instantly and is refreshed on demand. The cache is removed when you clear app data or uninstall.</li>
+          <li><strong>Scrape timestamps</strong> — The time each config was scraped is stored with the config so you can see how fresh a link is.</li>
+          <li><strong>Advertising data</strong> — Governed by Adivery's retention policies.</li>
         </ul>
         <p>
-          You may request deletion of your account and associated data at any time by contacting us at the email below.
+          We do not hold any account or session data to delete — if you have questions about the data we hold, contact us at the email below.
         </p>
       </div>
 

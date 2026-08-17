@@ -1,5 +1,13 @@
 # Server Management Guide
 
+> ## 🚀 v2.2 (2026-08-13, updated 2026-08-15)
+> RootNet is now a **config launcher** — no auth, no premium, no JWT. The app fetches the
+> server list via **public Supabase REST** (anon key, RLS filters `is_active` only; the
+> `premium_only` column was **removed** 2026-08-15 — every server is public). Everything
+> below about Flutter / auth sessions / JWT describes the retired v1 app. The
+> INSERT/delete/table guides remain valid. `servers.created_at` is now the **scrape time**
+> (stamped by the scraper, preserved by the import RPC).
+
 ## Architecture Overview
 
 ```
@@ -8,27 +16,21 @@
 │   (PostgreSQL)      │
 └──────┬──────────────┘
        │
-       ├── Cloudflare Worker API  ──── Flutter App (fallback path)
-       │   (blocked in some countries)
-       │
-       └── Direct Supabase query ──── Flutter App (primary path)
-           (uses RLS + auth session)
+       └── Public REST read ──── Android app (config launcher)
+           (anon key, RLS: is_active=true — every server is public)
 ```
 
 ### How servers are fetched
 
-The Flutter app uses a **dual-path** strategy:
+The Android app (`RemoteServerRepository`) reads `servers` via **public Supabase REST**
+with the anon key:
 
-1. **Direct Supabase** (primary): `Supabase.instance.client.from('servers').select(...)`
-   - Uses the user's existing auth session (JWT)
-   - RLS policies automatically filter based on premium status
-   - Works even when `*.workers.dev` is blocked
-   - Implemented in: `lib/services/http_service.dart` → `fetchServersDirect()`
+1. `GET /rest/v1/servers?select=name,flag,country,config,type,config_format,created_at&is_active=eq.true`
+   - No auth session, no JWT — the anon role's RLS policy filters to active rows
+   - `created_at` carries the scrape time (shown in the app as 🕗 local time)
+2. **Cache-first**: `ServerCacheStore` shows the cached list instantly; refresh re-fetches
 
-2. **Worker API** (fallback): `POST /servers` on Cloudflare Worker
-   - Used only if direct Supabase query fails
-   - Same JWT auth, but routed through the Worker proxy layer
-   - Implemented in: `lib/services/http_service.dart` → `fetchServersViaWorker()`
+Configs come ONLY from the DB — never hardcoded.
 
 ## Adding New Servers
 
@@ -48,7 +50,6 @@ The Flutter app uses a **dual-path** strategy:
 | `host` | TEXT | - | Server hostname/IP (for reference) |
 | `port` | INT | - | Server port (usually 443, 8443, 2083) |
 | `is_active` | BOOL | ✅ | `true` = available, `false` = hidden |
-| `premium_only` | BOOL | ✅ | `true` = premium users only, `false` = everyone |
 | `type` | TEXT | ✅ | Protocol: `vless`, `vmess`, `trojan`, `wireguard` |
 | `config_format` | TEXT | ✅ | Format: `link`, `json`, `npv`, `conf` |
 
@@ -57,7 +58,7 @@ The Flutter app uses a **dual-path** strategy:
 Run in [Supabase SQL Editor](https://app.supabase.com/project/bprkazfxqmanrybiexnh/sql):
 
 ```sql
-INSERT INTO public.servers (name, flag, country, config, host, port, is_active, premium_only, type, config_format)
+INSERT INTO public.servers (name, flag, country, config, host, port, is_active, type, config_format)
 VALUES (
   'ServerName',                              -- display name
   '🌐',                                      -- flag emoji
@@ -66,7 +67,6 @@ VALUES (
   'host.example.com',                        -- hostname
   443,                                       -- port
   true,                                      -- is_active
-  false,                                     -- premium_only
   'vless',                                   -- type
   'link'                                     -- config_format
 );
@@ -154,7 +154,7 @@ DELETE FROM public.servers WHERE name = 'ServerName';
 ### "No servers available" in the app
 
 1. **Check Supabase → Table Editor**: Verify there are rows in `servers` with `is_active = true`
-2. **Check auth**: Ensure you're logged in (the Supabase query requires a valid session)
-3. **Check RLS policies**: The authenticated user needs SELECT access
-4. **Look at debug logs**: Connect via USB and run `flutter logs` — look for `ServerList:` and `HttpService:` prefixed messages
+2. **Check RLS policies**: The anon role must have SELECT (`is_active=true`) — the app reads as anon
+3. **Check network**: The app's `PinnedHttpClient` cert-pins the Supabase host; a rotated cert without the new pin blocks reads
+4. **Look at debug logs**: `adb logcat` — look for `RemoteServerRepository` / `PinnedHttpClient` messages
 5. **Check Supabase connectivity**: Test if `https://bprkazfxqmanrybiexnh.supabase.co` is reachable from your device

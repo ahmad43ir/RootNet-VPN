@@ -59,7 +59,6 @@ migrate_working_dir/
 *.env.production
 *.env.staging
 *.env.test
-*.env.example
 
 # Flutter auto-generated integration env (contains build references)
 **/flutter_native_integration.env

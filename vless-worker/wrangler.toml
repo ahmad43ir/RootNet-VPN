@@ -1,0 +1,33 @@
+name = "vless-ingestion-api"
+main = "src/index.js"
+compatibility_date = "2026-07-28"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# VLESS Ingestion API Worker
+# ──────────────────────────────────────────────────────────────────────────────
+# Receives VLESS configs from the Telegram scraper (via webhook) and stores
+# them in Supabase (vless_links table).
+#
+# Pipeline:
+#   Telegram Channel → Telethon Listener → POST /webhook → Worker → Supabase
+#
+# Endpoints:
+#   POST /webhook        — Receive a message from Telegram, extract VLESS, store
+#   POST /webhook/batch  — Receive pre-extracted VLESS links directly
+#   GET  /health         — Health check
+#   POST /cleanup        — Trigger manual cleanup of old links
+#
+# Secrets (set via `npx wrangler secret put`):
+#   SUPABASE_URL              — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — Supabase service_role key (write access)
+#   WEBHOOK_API_KEY           — Shared secret to authenticate incoming webhooks
+#
+# Deployment:
+#   cd vless-worker
+#   npx wrangler deploy
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ─── Observability ───────────────────────────────────────────────────────────
+[observability]
+enabled = true
+head_sampling_rate = 0.1

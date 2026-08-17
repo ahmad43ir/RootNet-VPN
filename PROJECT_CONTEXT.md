@@ -1,21 +1,40 @@
 # RootNet VPN — Project Context
 
+> ## 🚀 V2.0 (2026-08-13) — CONFIG LAUNCHER
+>
+> RootNet v2.2 is a **native Android config launcher**, not a VPN client. The built-in Xray
+> engine, auth/premium, session timer, FCM push, AdMob, and Unity Ads are **removed**
+> (2026-08-15: the `premium_only` column was dropped from `servers`/`vless_links` — every
+> server is public).
+> The app serves fresh VLESS/V2Ray configs from Supabase and lets users **copy** them
+> (Adivery interstitial) or **export** them (Adivery rewarded video) into their own client
+> app (v2rayNG, NekoBox, Hiddify…). No accounts. Version gate kept. **Adivery is the only
+> ad network** (App ID `73697db8-c7dc-4af2-9f3c-dd422942cf57`).
+>
+> ⚠️ Much of this document still describes the **retired Flutter VPN app**. For current truth
+> use **`app_clone.md` §0 (v2.0 supersession)** and the code in `android-app/`.
+
 ## 1. Project Overview
 
-- Flutter VPN mobile app (rebranded from WoodVless to **RootNet**)
+- Native Android config launcher (Kotlin + Jetpack Compose, rebranded from WoodVless to **RootNet**)
 - Package: **com.chobgroup.rootnet**
-- Uses **Supabase** for email/password authentication
-- Connects to **VLESS/V2Ray** protocol servers via `flutter_vless` package
+- Uses **Supabase** (public REST) to fetch the VLESS/V2Ray server config list
+- Configs are **copied** or **exported** to the user's own client app — RootNet never tunnels traffic
 - Dark cyber-organic UI theme (neon green `#4CFF88` / `#39FF14`, deep forest `#0B1A12`)
-- Session persistence: user stays logged in across restarts
-- App icon: **RootNet logo** (generated via `flutter_launcher_icons`)
+- No accounts, no login, no session persistence
+- App icon: **RootNet logo**
 - Landing page: **https://chobgroup.pages.dev** (Chob Group hub)
 - Project pages: **https://chobgroup.pages.dev/rootnet.html** (RootNet), **https://chobgroup.pages.dev/geoip.html** (GeoIP)
 - Backend API: Supabase Edge Functions (replaces old Cloudflare Workers)
 
 ---
 
-## 2. Completed Features
+## 2. Completed Features — 🔴 RETIRED (v1 Flutter VPN app)
+
+> Everything from here through §17 (except the explicitly v2-marked sections like §14) is
+> **historical v1 content** — login/auth, sessions, Unity Ads gating, engine, FCM, etc. are
+> GONE in v2.2. Do not treat these as current requirements. For the live v2 feature list
+> see `app_clone_checklist.md` (v2.0 section) and `ROADMAP.md` (v2.0 section).
 
 - User authentication (login / signup / logout) with Supabase
 - Password reset via email (Supabase)
@@ -453,16 +472,15 @@ supabase functions deploy geo-api --no-verify-jwt
 
 ---
 
-## 14. Core Rules
+## 14. Core Rules (v2.0)
 
 - Do NOT modify existing UI or design theme
-- Do NOT rewrite authentication logic
 - Keep code simple (no over-engineering)
-- VPN must use real VLESS/V2Ray connection (flutter_vless)
-- Ad flow must gate the VPN connection timer — BUT only when ads are actually available (premium users and unconfigured/offline ad SDK are exempt, so users are never locked out)
-- Premium status comes ONLY from the signed JWT (`app_metadata.isPremium`) — never a local flag
-- Server list MUST be fetched from encrypted API (not hardcoded)
-- Version check MUST run before every VPN connection attempt
+- The app NEVER connects/tunnels — it only serves configs (copy / export)
+- Ad flow (Adivery only): **Copy** gated by an interstitial (throttled 60s); **Export** and **Refresh** gated by a rewarded video (completion required); ads unavailable → action still completes (NO lockout)
+- No accounts, no premium, no JWT — the app is fully public
+- Server list MUST be fetched from the backend (public Supabase REST) — never hardcoded
+- Version check MUST run at app startup
 - **All VLESS configs live ONLY in Supabase DB** — never hardcode in the app or Worker
 
 ---
@@ -484,10 +502,10 @@ rootnet/
 ├── vless-scraper/                  # Telegram scraper (Python/Telethon → webhook to vless-worker)
 │   ├── main.py
 │   └── README.md
-├── android/
+├── android-app/                   # v2.x native Kotlin/Compose app (NOT Flutter)
 │   ├── app/
-│   │   ├── build.gradle.kts       # jniLibs packaging + minSdk 23
-│   │   └── proguard-rules.pro     # Android obfuscation rules
+│   │   ├── build.gradle.kts       # minSdk 23, Adivery + Crashlytics, R8
+│   │   └── proguard-rules.pro     # R8 rules (WorkManager + Adivery keeps)
 ├── lib/
 │   ├── main.dart                  # App entry + startup version check
 │   ├── features/                  # Feature-based architecture
