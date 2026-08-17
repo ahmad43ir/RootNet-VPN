@@ -1,0 +1,15 @@
+# ============================================================
+# 📁 requirements.txt — VLESS Telegram Scraper
+# ============================================================
+# Install: pip install -r requirements.txt
+# Freeze:  pip freeze > requirements.txt
+# ============================================================
+
+# Telegram client SDK (event-driven, async)
+telethon==1.38.0
+
+# Supabase Python client
+supabase==2.10.0
+
+# HTTP client (dependency of supabase-py)
+httpx==0.27.2

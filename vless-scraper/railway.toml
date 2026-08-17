@@ -1,0 +1,31 @@
+# ============================================================
+# 📁 railway.toml — VLESS Telegram Scraper deployment config
+# ============================================================
+# Deploys the event-driven Telegram listener as a Railway service.
+#
+# The scraper is a long-running worker (no web server), so there is
+# no HTTP healthcheck path. Railway keeps the process alive and
+# restarts it automatically if it exits or crashes.
+#
+# Deploy:
+#   cd vless-scraper
+#   railway up                       # (after `railway login` + `railway link`)
+#
+# Required variables (set via `railway variables` or Dashboard):
+#   API_ID, API_HASH, TELEGRAM_SESSION, WEBHOOK_URL, WEBHOOK_API_KEY,
+#   CHANNELS
+# ============================================================
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+# Entry point — the bot runs forever, so the process stays alive.
+startCommand = "python main.py"
+
+# Always restart if the process exits (crash, network drop, etc.).
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10
+
+healthcheckPath = ""
+healthcheckTimeout = 0
