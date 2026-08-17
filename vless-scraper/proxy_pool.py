@@ -163,32 +163,40 @@ class SupabaseStorage:
         await self._patch(host, port, {"is_active": False, "deactivated_at": datetime.now(timezone.utc).isoformat()})
 
     async def cleanup_dead_proxies(self, max_age_days: int = 3) -> int:
-        """Delete dead proxies (is_active=False) older than max_age_days. Returns count deleted."""
+        """Delete dead proxies (is_active=False) older than max_age_days. Returns count deleted.
+
+        Also covers legacy rows deactivated BEFORE the `deactivated_at` column
+        existed (20260818000004) — those have deactivated_at NULL, so we fall
+        back to `last_checked` as the age proxy for them.
+        """
         try:
             cutoff = (datetime.now(timezone.utc) - timedelta(days=max_age_days)).isoformat()
+            # Dead rows older than the cutoff, OR legacy dead rows (NULL
+            # deactivated_at) whose last_checked is also older than the cutoff.
+            filters = {
+                "select": "id",
+                "is_active": "eq.false",
+                "or": (
+                    f"(deactivated_at.lt.{cutoff},"
+                    f"and(deactivated_at.is.null,last_checked.lt.{cutoff}))"
+                ),
+            }
             async with httpx.AsyncClient(timeout=15) as client:
                 # Count first (before delete)
                 count_r = await client.get(
                     f"{self.base}/{self.TABLE}",
                     headers=self._headers(),
-                    params={
-                        "select": "id",
-                        "is_active": "eq.false",
-                        "deactivated_at": f"lt.{cutoff}",
-                    },
+                    params=filters,
                 )
                 count = 0
                 if count_r.status_code == 200:
                     count = len(count_r.json() or [])
-                
+
                 # Then delete
                 r = await client.delete(
                     f"{self.base}/{self.TABLE}",
                     headers=self._headers(),
-                    params={
-                        "is_active": "eq.false",
-                        "deactivated_at": f"lt.{cutoff}",
-                    },
+                    params=filters,
                 )
                 if r.status_code in (200, 204):
                     return count
