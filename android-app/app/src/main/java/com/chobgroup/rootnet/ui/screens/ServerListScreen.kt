@@ -130,8 +130,10 @@ fun ServerListScreen() {
     var menuOpen by remember { mutableStateOf(false) }
     // rawConfig of the server whose export is currently in progress.
     var exporting by remember { mutableStateOf<String?>(null) }
-    // Combined Copy/Export counter — every 3rd tap shows the interstitial.
+    // Combined Copy/Export counter — every 3rd tap on a DIFFERENT config
+    // shows the interstitial (re-tapping the same config doesn't count).
     var actionCount by remember { mutableIntStateOf(0) }
+    var countedConfigs by remember { mutableStateOf<Set<String>>(emptySet()) }
     // Set when "Open" was tapped but no app handles the config.
     var noClientConfig by remember { mutableStateOf<String?>(null) }
 
@@ -316,15 +318,23 @@ fun ServerListScreen() {
     }
 
     /**
-     * Every Copy/Export tap counts toward a combined counter; every **3rd**
-     * tap shows an Adivery interstitial (image ad) first — the action then
-     * completes when it closes. If the ad can't show, the global lock rule
-     * applies: the screen locks until a rewarded ad is watched to the end.
+     * Every Copy/Export tap on a NEW config counts toward a combined counter;
+     * every **3rd distinct config** shows an Adivery interstitial (image ad)
+     * first — the action then completes when it closes. Tapping the same
+     * config again does NOT advance the counter (only different configs do).
+     * If the ad can't show, the global lock rule applies: the screen locks
+     * until a rewarded ad is watched to the end.
      */
-    fun performGatedAction(action: () -> Unit) {
-        actionCount++
+    fun performGatedAction(configKey: String, action: () -> Unit) {
+        // Re-taps of a config already counted in this cycle complete without
+        // counting (and without an ad).
+        if (configKey !in countedConfigs) {
+            countedConfigs = countedConfigs + configKey
+            actionCount++
+        }
         if (actionCount >= 3) {
             actionCount = 0
+            countedConfigs = emptySet()
             val shown = AdiveryAdsManager.maybeShowInterstitial(onFinished = { action() })
             if (!shown) {
                 runGate(GatePurpose.UNLOCK, onRewarded = { action() })
@@ -335,14 +345,14 @@ fun ServerListScreen() {
     }
 
     fun copyServer(server: VpnServer) {
-        performGatedAction {
+        performGatedAction(server.rawConfig) {
             ConfigActions.copyToClipboard(context, "RootNet config", server.rawConfig)
             scope.launch { snackbar.showSnackbar("Config copied — import it into your client") }
         }
     }
 
     fun exportServer(server: VpnServer) {
-        performGatedAction {
+        performGatedAction(server.rawConfig) {
             exporting = server.rawConfig
             openOrFallback(server)
             exporting = null

@@ -83,7 +83,7 @@ fun SettingsScreen() {
             modifier = Modifier.fillMaxWidth(),
         ) {
             StepRow(number = "1", text = "Pick a server and tap Export — the config opens in your installed VPN client (v2rayNG, NekoBox, Hiddify…).")
-            StepRow(number = "2", text = "Every 3rd Copy/Export tap shows a short picture ad first — once it closes, your action completes.")
+            StepRow(number = "2", text = "Every 3rd different config you Copy/Export shows a short picture ad first — once it closes, your action completes. Tapping the same config again doesn't count.")
             StepRow(number = "3", text = "No client installed? The app will offer to copy the config so you can import it anywhere.")
         }
         Spacer(Modifier.height(24.dp))
