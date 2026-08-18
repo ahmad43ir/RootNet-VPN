@@ -252,6 +252,22 @@ def extract_links(text: str) -> list[str]:
     return unique
 
 
+def message_text(msg) -> str:
+    """
+    Plain message text plus URLs hidden in Telegram link entities
+    (text_link / url). Channels sometimes render a proxy or config
+    behind custom display text (e.g. a bold blue word) — the URL lives
+    in msg.entities, not in msg.message, so appending entity URLs
+    lets the link extractors see them.
+    """
+    text = getattr(msg, "message", None) or ""
+    entities = getattr(msg, "entities", None) or []
+    urls = [e.url for e in entities if getattr(e, "url", None)]
+    if urls:
+        text = f"{text}\n" + "\n".join(urls)
+    return text
+
+
 def extract_from_json_text(text: str) -> list[str]:
     """
     Extract config URIs from an NPV-family export (`.npv` / `.npvt` / `.npt`)
@@ -613,8 +629,8 @@ class VlessScraper:
         if channel_username not in self.channels:
             return
 
-        # Extract text + any NPV/JSON attachment
-        text: str = event.text or event.message.message or ""
+        # Extract text (+ hidden link-entity URLs) + any NPV/JSON attachment
+        text: str = message_text(event.message)
         file_links: list[str] = await self._extract_attachment_links(event.message)
         # When the link was scraped = the Telegram message date (shown in the app).
         scraped_at: str = _to_utc_iso(event.message.date)
@@ -992,7 +1008,7 @@ class VlessScraper:
             for msg in messages:
                 if not msg:
                     continue
-                text: str = msg.message or ""
+                text: str = message_text(msg)
                 file_links: list[str] = await self._extract_attachment_links(msg)
                 # When the link was scraped = the Telegram message date (shown in the app).
                 scraped_at: str = _to_utc_iso(msg.date)

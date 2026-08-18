@@ -432,8 +432,17 @@ async def refresh_pool(
             entity = await client.get_entity(ch)
             messages = await client.get_messages(entity, limit=messages_per_channel)
             for msg in messages:
-                if msg and msg.message:
-                    candidates += parse_proxy_candidates(msg.message)
+                if not msg:
+                    continue
+                # Plain text + URLs hidden in link entities (text_link/url),
+                # so proxies behind custom display text are still found.
+                text = msg.message or ""
+                entities = getattr(msg, "entities", None) or []
+                urls = [e.url for e in entities if getattr(e, "url", None)]
+                if urls:
+                    text = f"{text}\n" + "\n".join(urls)
+                if text:
+                    candidates += parse_proxy_candidates(text)
         except Exception as e:
             log.warning(f"  ⚠️ Could not scrape proxy channel @{ch}: {e}")
     summary["candidates"] = len(candidates)
