@@ -114,6 +114,9 @@ Treat these as safe ceilings regardless of plan changes:
 
 - Keep **total REST calls per scraper run ≤ ~20** (1 cleanup + proxy-pool GET/PATCH/upserts +
   a handful of `scraper_config` reads). At 720 runs/mo ≈ 15k calls — negligible vs. any free cap.
+- `vpn_files` uploads add up to 2 calls per config-attachment message (1 dedup GET + 1 insert POST),
+  only for recognized config files (`.npvt`/`.npv`/`.json`/…), deduped by filename+channel+size —
+  encrypted files that yield no links still get stored so users can download them (VPN Files tab).
 - The webhook worker already spaces inserts 200 ms apart and dedups — don't batch-spam it, and
   don't send messages with no links.
 - `import_pending_vless_links()` runs via pg_cron every 30 min (internal, low cost) — leave it.

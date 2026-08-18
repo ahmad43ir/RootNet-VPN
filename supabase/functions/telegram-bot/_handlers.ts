@@ -303,6 +303,57 @@ function isAdmin(ctx: BotContext, userId?: number): boolean {
   return userId !== undefined && ctx.adminIds.has(userId);
 }
 
+// ─── Menu-message lifecycle ───────────────────────────────────
+// The bot used to send a NEW menu/option message on every navigation
+// (each main-keyboard tap, /start, page flips), so the chat filled up
+// with stacked keyboards. Instead, one "live" menu message is tracked
+// per chat (bot_chat_state.menu_message_id): sending a new page first
+// deletes the previous one. Content replies (results, errors, files)
+// are not tracked — only navigation pages are.
+
+/** Send a menu page, replacing (deleting) the previously tracked one. */
+async function showMenu(
+  ctx: BotContext,
+  chatId: number,
+  text: string,
+  opts: tg.TgSendOptions = {},
+): Promise<void> {
+  const state = await getChatState(ctx.supabase, chatId);
+  if (state.menuMessageId !== null) {
+    await tg.deleteMessage(ctx.token, chatId, state.menuMessageId);
+  }
+  const sent = await tg.sendMessage(ctx.token, chatId, text, opts);
+  await saveChatState(ctx.supabase, { ...state, menuMessageId: sent?.message_id ?? null });
+}
+
+/** Mark the tapped message as the live menu page, deleting the previously
+ *  tracked one when it's a different message (e.g. user tapped an old menu). */
+async function adoptMenuMessage(ctx: BotContext, chatId: number, messageId: number): Promise<void> {
+  const state = await getChatState(ctx.supabase, chatId);
+  if (state.menuMessageId !== null && state.menuMessageId !== messageId) {
+    await tg.deleteMessage(ctx.token, chatId, state.menuMessageId);
+  }
+  await saveChatState(ctx.supabase, { ...state, menuMessageId: messageId });
+}
+
+/** Send a transient result/status message (scrape report, upload summary,
+ *  command answer), replacing the previously tracked result so status
+ *  messages don't pile up. Returns the new message id (for in-place edits). */
+async function showResult(
+  ctx: BotContext,
+  chatId: number,
+  text: string,
+  opts: tg.TgSendOptions = {},
+): Promise<number | null> {
+  const state = await getChatState(ctx.supabase, chatId);
+  if (state.resultMessageId !== null) {
+    await tg.deleteMessage(ctx.token, chatId, state.resultMessageId);
+  }
+  const sent = await tg.sendMessage(ctx.token, chatId, text, opts);
+  await saveChatState(ctx.supabase, { ...state, resultMessageId: sent?.message_id ?? null });
+  return sent?.message_id ?? null;
+}
+
 export async function routeUpdate(ctx: BotContext, update: any): Promise<void> {
   if (update.message) {
     await handleMessage(ctx, update);
@@ -353,32 +404,32 @@ async function handleCommand(
 
   // /myid works for anyone (used to discover your admin id).
   if (command === '/myid' || command.startsWith('/myid ')) {
-    await tg.sendMessage(token, chatId, `Your Telegram user ID: \`${userId}\``, {
+    await showResult(ctx, chatId, `Your Telegram user ID: \`${userId}\``, {
       parse_mode: 'Markdown',
     });
     return;
   }
 
   if (!isAdmin(ctx, userId)) {
-    await tg.sendMessage(token, chatId, 'Access denied.');
+    await showResult(ctx, chatId, 'Access denied.');
     return;
   }
 
   if (command === '/start' || command.startsWith('/start ')) {
     await tg.setMyCommands(token, BOT_COMMANDS);
-    await tg.sendMessage(token, chatId, MENU_TEXT, { reply_markup: mainKeyboard() });
+    await showMenu(ctx, chatId, MENU_TEXT, { reply_markup: mainKeyboard() });
     return;
   }
 
   if (command === '/stats') {
     const total = await countActiveServers(ctx.supabase);
     const text = total !== null ? `Active servers in DB: ${total}` : 'Could not reach Supabase.';
-    await tg.sendMessage(token, chatId, text);
+    await showResult(ctx, chatId, text);
     return;
   }
 
   if (command === '/help') {
-    await tg.sendMessage(token, chatId, HELP_TEXT, {
+    await showMenu(ctx, chatId, HELP_TEXT, {
       parse_mode: 'Markdown',
       reply_markup: mainKeyboard(),
     });
@@ -386,17 +437,17 @@ async function handleCommand(
   }
 
   if (command === '/backfillflags') {
-    const status = await tg.sendMessage(token, chatId, '⏳ Geolocating all servers...');
+    const statusId = await showResult(ctx, chatId, '⏳ Geolocating all servers...');
     const result = await backfillFlags(ctx.supabase, ctx.insertCtx);
     const text =
       '🌍 Flag backfill complete\n' +
       `Scanned: ${result.scanned}\n` +
       `Updated: ${result.updated}\n` +
       `Failed: ${result.failed}`;
-    if (status?.message_id) {
-      await tg.editMessageText(token, chatId, status.message_id, text);
+    if (statusId !== null) {
+      await tg.editMessageText(token, chatId, statusId, text);
     } else {
-      await tg.sendMessage(token, chatId, text);
+      await showResult(ctx, chatId, text);
     }
     return;
   }
@@ -406,7 +457,7 @@ async function handleCommand(
   if (command === '/version') {
     const config = await getAppConfig(ctx.supabase);
     if (!config) {
-      await tg.sendMessage(token, chatId, '⚠️ Could not read app_config from Supabase.');
+      await showResult(ctx, chatId, '⚠️ Could not read app_config from Supabase.');
       return;
     }
     const text =
@@ -417,22 +468,22 @@ async function handleCommand(
       `Force update: ${config.force_update ? '✅ ON' : '❌ OFF'}\n` +
       `Update URL: ${config.update_url}\n` +
       `Release notes: ${config.release_notes || '(none)'}`;
-    await tg.sendMessage(token, chatId, text, { parse_mode: 'Markdown' });
+    await showResult(ctx, chatId, text, { parse_mode: 'Markdown' });
     return;
   }
 
   if (command === '/setmin' || command.startsWith('/setmin ')) {
     const arg = fullText.slice('/setmin'.length).trim();
     if (!arg || !/^\d+\.\d+\.\d+$/.test(arg)) {
-      await tg.sendMessage(token, chatId, 'Usage: `/setmin 2.0.1` (format: X.Y.Z)', {
+      await showResult(ctx, chatId, 'Usage: `/setmin 2.0.1` (format: X.Y.Z)', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const config = await getAppConfig(ctx.supabase);
     if (config?.latest_version && compareVersion(arg, config.latest_version) > 0) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         `⚠️ Cannot set minimum \`${arg}\` — it is NEWER than latest (\`${config.latest_version}\`). Set /setlatest first.`,
         { parse_mode: 'Markdown' },
@@ -440,8 +491,8 @@ async function handleCommand(
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { minimum_version: arg });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Minimum version set to \`${arg}\`\n\nApps below this version will be blocked.`
@@ -454,15 +505,15 @@ async function handleCommand(
   if (command === '/setlatest' || command.startsWith('/setlatest ')) {
     const arg = fullText.slice('/setlatest'.length).trim();
     if (!arg || !/^\d+\.\d+\.\d+$/.test(arg)) {
-      await tg.sendMessage(token, chatId, 'Usage: `/setlatest 2.1.0` (format: X.Y.Z)', {
+      await showResult(ctx, chatId, 'Usage: `/setlatest 2.1.0` (format: X.Y.Z)', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const config = await getAppConfig(ctx.supabase);
     if (config?.minimum_version && compareVersion(arg, config.minimum_version) < 0) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         `⚠️ Cannot set latest \`${arg}\` — it is OLDER than minimum (\`${config.minimum_version}\`). Fix /setmin first.`,
         { parse_mode: 'Markdown' },
@@ -470,8 +521,8 @@ async function handleCommand(
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { latest_version: arg });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Latest version set to \`${arg}\``
@@ -485,14 +536,14 @@ async function handleCommand(
     const arg = fullText.slice('/setbuild'.length).trim();
     const num = parseInt(arg, 10);
     if (!arg || isNaN(num) || num < 0) {
-      await tg.sendMessage(token, chatId, 'Usage: `/setbuild 300` (positive integer)', {
+      await showResult(ctx, chatId, 'Usage: `/setbuild 300` (positive integer)', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { latest_build: num });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Latest build set to \`${num}\``
@@ -515,8 +566,8 @@ async function handleCommand(
       newValue = !(config?.force_update ?? false);
     }
     const ok = await updateAppConfig(ctx.supabase, { force_update: newValue });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Force update: ${newValue ? '✅ ON' : '❌ OFF'}`
@@ -531,8 +582,8 @@ async function handleCommand(
   if (command === '/addproxy' || command.startsWith('/addproxy ')) {
     const arg = fullText.slice('/addproxy'.length).trim();
     if (!arg) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         'Usage: `/addproxy tg://proxy?server=..&port=..&secret=..`\nor `/addproxy mtproto://secret@host:port`\nor `/addproxy host:port:secret`',
         { parse_mode: 'Markdown' },
@@ -541,8 +592,8 @@ async function handleCommand(
     }
     const p = parseProxyInput(arg);
     if (!p) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         'Could not parse that proxy. Use `tg://proxy?...`, `mtproto://secret@host:port`, or `host:port:secret`.',
         { parse_mode: 'Markdown' },
@@ -556,15 +607,15 @@ async function handleCommand(
         : res === 'exists'
           ? `Already in the pool: \`${p.host}:${p.port}\``
           : '⚠️ Could not save proxy (Supabase error).';
-    await tg.sendMessage(token, chatId, text, { parse_mode: 'Markdown' });
+    await showResult(ctx, chatId, text, { parse_mode: 'Markdown' });
     return;
   }
 
   if (command === '/delproxy' || command.startsWith('/delproxy ')) {
     const arg = fullText.slice('/delproxy'.length).trim();
     if (!arg) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         'Usage: `/delproxy <host>` or `/delproxy <id>` or `/delproxy all`',
         { parse_mode: 'Markdown' },
@@ -572,14 +623,14 @@ async function handleCommand(
       return;
     }
     const deleted = arg === 'all' ? await deleteAllScraperProxies(ctx.supabase) : await deleteScraperProxy(ctx.supabase, arg);
-    await tg.sendMessage(token, chatId, `🗑 Deleted ${deleted} proxy/proxies.`);
+    await showResult(ctx, chatId, `🗑 Deleted ${deleted} proxy/proxies.`);
     return;
   }
 
   if (command === '/listproxy') {
     const rows = await listScraperProxies(ctx.supabase);
     if (rows.length === 0) {
-      await tg.sendMessage(token, chatId, 'Proxy pool is empty. Add one with /addproxy.');
+      await showResult(ctx, chatId, 'Proxy pool is empty. Add one with /addproxy.');
       return;
     }
     const lines = rows.map((r) => {
@@ -587,8 +638,8 @@ async function handleCommand(
       const last = r.last_checked ? ` last:${r.last_checked.slice(0, 16)}` : '';
       return `${status} \`${r.id}\`. \`${r.host}:${r.port}\`${last}`;
     });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       `*MTProto proxy pool (${rows.length})*\n\n${lines.join('\n')}`,
       { parse_mode: 'Markdown' },
@@ -608,21 +659,21 @@ async function handleCommand(
   if (command === '/addchannel' || command.startsWith('/addchannel ')) {
     const arg = fullText.slice('/addchannel'.length).trim().replace(/^@/, '').trim();
     if (!arg) {
-      await tg.sendMessage(token, chatId, 'Usage: `/addchannel @channel_username`', {
+      await showResult(ctx, chatId, 'Usage: `/addchannel @channel_username`', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const channels = await getScraperChannels(ctx.supabase);
     if (channels.includes(arg)) {
-      await tg.sendMessage(token, chatId, `@${arg} is already in the scraper channel list.`);
+      await showResult(ctx, chatId, `@${arg} is already in the scraper channel list.`);
       return;
     }
     channels.push(arg);
     if (await setScraperChannels(ctx.supabase, channels)) {
-      await tg.sendMessage(token, chatId, `✅ Added @${arg} to the scraper channels.`);
+      await showResult(ctx, chatId, `✅ Added @${arg} to the scraper channels.`);
     } else {
-      await tg.sendMessage(token, chatId, '⚠️ Could not save channels (Supabase error).');
+      await showResult(ctx, chatId, '⚠️ Could not save channels (Supabase error).');
     }
     return;
   }
@@ -630,7 +681,7 @@ async function handleCommand(
   if (command === '/delchannel' || command.startsWith('/delchannel ')) {
     const arg = fullText.slice('/delchannel'.length).trim().replace(/^@/, '').trim();
     if (!arg) {
-      await tg.sendMessage(token, chatId, 'Usage: `/delchannel @channel_username`', {
+      await showResult(ctx, chatId, 'Usage: `/delchannel @channel_username`', {
         parse_mode: 'Markdown',
       });
       return;
@@ -638,14 +689,14 @@ async function handleCommand(
     const channels = await getScraperChannels(ctx.supabase);
     const idx = channels.indexOf(arg);
     if (idx === -1) {
-      await tg.sendMessage(token, chatId, `@${arg} is not in the scraper channel list.`);
+      await showResult(ctx, chatId, `@${arg} is not in the scraper channel list.`);
       return;
     }
     channels.splice(idx, 1);
     if (await setScraperChannels(ctx.supabase, channels)) {
-      await tg.sendMessage(token, chatId, `🗑 Removed @${arg} from the scraper channels.`);
+      await showResult(ctx, chatId, `🗑 Removed @${arg} from the scraper channels.`);
     } else {
-      await tg.sendMessage(token, chatId, '⚠️ Could not save channels (Supabase error).');
+      await showResult(ctx, chatId, '⚠️ Could not save channels (Supabase error).');
     }
     return;
   }
@@ -656,12 +707,12 @@ async function handleCommand(
       channels.length === 0
         ? 'No channels configured yet. Add one with /addchannel.'
         : `*Channels (${channels.length})*\n\n${channels.map((c) => `@${c}`).join('\n')}`;
-    await tg.sendMessage(token, chatId, text, { parse_mode: 'Markdown' });
+    await showResult(ctx, chatId, text, { parse_mode: 'Markdown' });
     return;
   }
 
   // Unknown command -> main menu.
-  await tg.sendMessage(token, chatId, MENU_TEXT, { reply_markup: mainKeyboard() });
+  await showMenu(ctx, chatId, MENU_TEXT, { reply_markup: mainKeyboard() });
 }
 
 /**
@@ -673,8 +724,8 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
   const token = ctx.token;
   const ghPat = Deno.env.get('GH_PAT') ?? '';
   if (!ghPat) {
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       '⚠️ `/scrape` is not configured yet — the GitHub token (GH_PAT function secret) is missing.',
       { parse_mode: 'Markdown' },
@@ -692,8 +743,8 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
       const elapsedMs = now.getTime() - lastScrapeTime;
       if (elapsedMs < minIntervalMs) {
         const remainingSec = Math.ceil((minIntervalMs - elapsedMs) / 1000);
-        const sent = await tg.sendMessage(
-          token,
+        const sentId = await showResult(
+          ctx,
           chatId,
           `⏳ **Scraper recently ran** ${formatDuration(elapsedMs)} ago.\n\n` +
           `To avoid hitting Telegram/GitHub rate limits, please wait **${remainingSec}s** before running again.\n\n` +
@@ -704,7 +755,7 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
         await saveChatState(ctx.supabase, {
           chatId,
           pendingScrapeConfirm: true,
-          scrapeMessageId: sent?.message_id,
+          scrapeMessageId: sentId,
         });
         return;
       }
@@ -713,8 +764,8 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
     // Check if a workflow is already running/queued
     const running = await checkRunningWorkflow(ghPat);
     if (running) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         '🔄 **Scraper is already running** (or queued) on GitHub Actions.\n\n' +
         'Please wait for the current run to complete before starting a new one.\n' +
@@ -728,7 +779,7 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
   const repo = Deno.env.get('GH_REPO') ?? 'ahmad43ir/rootnet';
   const ref = Deno.env.get('GH_REF') ?? 'master';
 
-  const sent = await tg.sendMessage(token, chatId, '🚀 Dispatching scraper run...');
+  const sentId = await showResult(ctx, chatId, '🚀 Dispatching scraper run...');
   const res = await dispatchWorkflow({
     pat: ghPat,
     repo,
@@ -744,20 +795,20 @@ async function dispatchScrape(ctx: BotContext, chatId: number, force = false): P
       'It connects through the proxy pool, scans the config channels, and posts new configs to the worker. ' +
       'I\'ll report the result here in ~2–5 minutes.\n\n' +
       'If it can\'t connect (broken proxy), tap "➕ Add proxy" in the Scraper menu and send a working one, then run it again.';
-    if (sent?.message_id) {
-      await tg.editMessageText(token, chatId, sent.message_id, text, { parse_mode: 'Markdown' });
+    if (sentId !== null) {
+      await tg.editMessageText(token, chatId, sentId, text, { parse_mode: 'Markdown' });
     } else {
-      await tg.sendMessage(token, chatId, text, { parse_mode: 'Markdown' });
+      await showResult(ctx, chatId, text, { parse_mode: 'Markdown' });
     }
   } else {
     const text =
       `❌ Could not start the run (HTTP ${res.status ?? 'network error'}).\n` +
       `${(res.body ?? '').slice(0, 200)}\n\n` +
       `Make sure the GH_PAT token has "Actions: read & write" access on ${repo} and the scraper branch is ${ref}.`;
-    if (sent?.message_id) {
-      await tg.editMessageText(token, chatId, sent.message_id, text);
+    if (sentId !== null) {
+      await tg.editMessageText(token, chatId, sentId, text);
     } else {
-      await tg.sendMessage(token, chatId, text);
+      await showResult(ctx, chatId, text);
     }
   }
 }
@@ -831,15 +882,14 @@ async function handlePendingInput(
   state: any,
   text: string,
 ): Promise<void> {
-  const token = ctx.token;
   const mode: string = state.pendingInput ?? '';
   await saveChatState(ctx.supabase, { ...state, pendingInput: null });
 
   if (mode === 'proxy') {
     const p = parseProxyInput(text);
     if (!p) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         'Could not parse that as an MTProto proxy. Use `tg://proxy?...`, `mtproto://secret@host:port`, or `host:port:secret`.',
         { parse_mode: 'Markdown' },
@@ -853,28 +903,28 @@ async function handlePendingInput(
         : res === 'exists'
           ? `Already in the pool: \`${p.host}:${p.port}\``
           : '⚠️ Could not save proxy (Supabase error).';
-    await tg.sendMessage(token, chatId, msg, { parse_mode: 'Markdown' });
+    await showResult(ctx, chatId, msg, { parse_mode: 'Markdown' });
     return;
   }
 
   if (mode === 'channel') {
     const arg = text.trim().replace(/^@/, '').trim();
     if (!arg) {
-      await tg.sendMessage(token, chatId, 'Send a channel username, e.g. `@myvlesschannel`.', {
+      await showResult(ctx, chatId, 'Send a channel username, e.g. `@myvlesschannel`.', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const channels = await getScraperChannels(ctx.supabase);
     if (channels.includes(arg)) {
-      await tg.sendMessage(token, chatId, `@${arg} is already in the scraper channel list.`);
+      await showResult(ctx, chatId, `@${arg} is already in the scraper channel list.`);
       return;
     }
     channels.push(arg);
     if (await setScraperChannels(ctx.supabase, channels)) {
-      await tg.sendMessage(token, chatId, `✅ Added @${arg} to the scraper channels.`);
+      await showResult(ctx, chatId, `✅ Added @${arg} to the scraper channels.`);
     } else {
-      await tg.sendMessage(token, chatId, '⚠️ Could not save channels (Supabase error).');
+      await showResult(ctx, chatId, '⚠️ Could not save channels (Supabase error).');
     }
     return;
   }
@@ -884,15 +934,15 @@ async function handlePendingInput(
   if (mode === 'setmin') {
     const arg = text.trim();
     if (!arg || !/^\d+\.\d+\.\d+$/.test(arg)) {
-      await tg.sendMessage(token, chatId, 'Invalid format. Use `X.Y.Z`, e.g. `2.0.1`.', {
+      await showResult(ctx, chatId, 'Invalid format. Use `X.Y.Z`, e.g. `2.0.1`.', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const config = await getAppConfig(ctx.supabase);
     if (config?.latest_version && compareVersion(arg, config.latest_version) > 0) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         `⚠️ Cannot set minimum \`${arg}\` — it is NEWER than latest (\`${config.latest_version}\`). Set /setlatest first.`,
         { parse_mode: 'Markdown', reply_markup: versionKeyboard() },
@@ -900,8 +950,8 @@ async function handlePendingInput(
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { minimum_version: arg });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Minimum version set to \`${arg}\`\n\nApps below this version will be blocked.`
@@ -914,15 +964,15 @@ async function handlePendingInput(
   if (mode === 'setlatest') {
     const arg = text.trim();
     if (!arg || !/^\d+\.\d+\.\d+$/.test(arg)) {
-      await tg.sendMessage(token, chatId, 'Invalid format. Use `X.Y.Z`, e.g. `2.1.0`.', {
+      await showResult(ctx, chatId, 'Invalid format. Use `X.Y.Z`, e.g. `2.1.0`.', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const config = await getAppConfig(ctx.supabase);
     if (config?.minimum_version && compareVersion(arg, config.minimum_version) < 0) {
-      await tg.sendMessage(
-        token,
+      await showResult(
+        ctx,
         chatId,
         `⚠️ Cannot set latest \`${arg}\` — it is OLDER than minimum (\`${config.minimum_version}\`). Fix /setmin first.`,
         { parse_mode: 'Markdown', reply_markup: versionKeyboard() },
@@ -930,8 +980,8 @@ async function handlePendingInput(
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { latest_version: arg });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Latest version set to \`${arg}\``
@@ -945,14 +995,14 @@ async function handlePendingInput(
     const arg = text.trim();
     const num = parseInt(arg, 10);
     if (!arg || isNaN(num) || num < 0) {
-      await tg.sendMessage(token, chatId, 'Invalid number. Use a positive integer, e.g. `300`.', {
+      await showResult(ctx, chatId, 'Invalid number. Use a positive integer, e.g. `300`.', {
         parse_mode: 'Markdown',
       });
       return;
     }
     const ok = await updateAppConfig(ctx.supabase, { latest_build: num });
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       ok
         ? `✅ Latest build set to \`${num}\``
@@ -991,8 +1041,8 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
   }
 
   if (!isAdmin(ctx, userId)) {
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       `Access denied. (Your Telegram user ID is \`${userId}\` — type /myid.)`,
       { parse_mode: 'Markdown' },
@@ -1002,8 +1052,8 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
 
   // Menu buttons.
   if (text === MENU_BTN_UPLOAD) {
-    await tg.sendMessage(
-      token,
+    await showMenu(
+      ctx,
       chatId,
       'Send me a `.txt`, `.npv`, `.npvt`, `.json`, or `.sip` file with VPN configs, or paste the text. ' +
         "They'll be uploaded as servers. The raw file is also saved to the VPN Files section " +
@@ -1023,14 +1073,14 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
       { text: label, url },
     ]);
     buttons.push([{ text: '◀ Menu', callback_data: 'menu' }]);
-    await tg.sendMessage(token, chatId, '🔗 Web pages', {
+    await showMenu(ctx, chatId, '🔗 Web pages', {
       reply_markup: { inline_keyboard: buttons },
     });
     return;
   }
 
   if (text === MENU_BTN_HELP) {
-    await tg.sendMessage(token, chatId, HELP_TEXT, {
+    await showMenu(ctx, chatId, HELP_TEXT, {
       parse_mode: 'Markdown',
       reply_markup: mainKeyboard(),
     });
@@ -1038,7 +1088,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
   }
 
   if (text === MENU_BTN_SCRAPER) {
-    await tg.sendMessage(token, chatId, SCRAPER_TEXT, {
+    await showMenu(ctx, chatId, SCRAPER_TEXT, {
       parse_mode: 'Markdown',
       reply_markup: scraperKeyboard(),
     });
@@ -1058,7 +1108,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
         `*Minimum:* \`${config.minimum_version}\`\n` +
         `*Force:* ${config.force_update ? '✅ ON' : '❌ OFF'}`
       : VERSION_TEXT;
-    await tg.sendMessage(token, chatId, text2, {
+    await showMenu(ctx, chatId, text2, {
       parse_mode: 'Markdown',
       reply_markup: versionKeyboard(),
     });
@@ -1080,7 +1130,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
   if (message.document) {
     const filePath = await tg.getFile(token, message.document.file_id);
     if (!filePath) {
-      await tg.sendMessage(token, chatId, 'Could not read the file.');
+      await showResult(ctx, chatId, 'Could not read the file.');
       return;
     }
     const fileName = message.document.file_name ?? 'document';
@@ -1088,7 +1138,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
       content = await tg.downloadFileText(token, filePath);
       source = fileName;
     } catch {
-      await tg.sendMessage(token, chatId, 'Could not read the file.');
+      await showResult(ctx, chatId, 'Could not read the file.');
       return;
     }
     // Store the raw attachment in vpn_files too (app File tab) — even when
@@ -1122,7 +1172,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
   }
 
   if (!content || !content.trim()) {
-    await tg.sendMessage(token, chatId, 'No readable content. Send a file or paste text.');
+    await showResult(ctx, chatId, 'No readable content. Send a file or paste text.');
     return;
   }
 
@@ -1130,8 +1180,8 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
 
   const parsed = parseFile(content);
   if (parsed.length === 0) {
-    await tg.sendMessage(
-      token,
+    await showResult(
+      ctx,
       chatId,
       'No VPN configs found in that. Supported formats: VLESS/VMess/Trojan/SS/WireGuard URIs, or NPV JSON exports.' +
         (vpnFileNote ? `\n\n${vpnFileNote}` : ''),
@@ -1142,11 +1192,11 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
 
   const batchChannel = channelFromForward(message) ?? extractChannel(content);
   const channelLabel = batchChannel ? ` from ${batchChannel}` : '';
-  await tg.sendMessage(token, chatId, `Parsed ${parsed.length} config(s)${channelLabel}. Uploading...`);
+  await showResult(ctx, chatId, `Parsed ${parsed.length} config(s)${channelLabel}. Uploading...`);
   const result = await processContent(ctx, content, batchChannel);
   const summary = formatSummary(parsed.length, result);
-  await tg.sendMessage(
-    token,
+  await showResult(
+    ctx,
     chatId,
     vpnFileNote ? `${summary}\n\n${vpnFileNote}` : summary,
     {
@@ -1157,12 +1207,11 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
 }
 
 async function sendServersList(ctx: BotContext, chatId: number): Promise<void> {
-  const token = ctx.token;
   const state = await getChatState(ctx.supabase, chatId);
   await saveChatState(ctx.supabase, { ...state, listMode: true, selectedIds: [] });
   const servers = await fetchServers(ctx.supabase);
   const selected = new Set<number>();
-  await tg.sendMessage(token, chatId, serversSelectText(servers, selected), {
+  await showMenu(ctx, chatId, serversSelectText(servers, selected), {
     reply_markup: serversSelectMarkup(servers, selected),
   });
 }
@@ -1170,7 +1219,6 @@ async function sendServersList(ctx: BotContext, chatId: number): Promise<void> {
 const VPN_FILES_PAGE_SIZE = 10;
 
 async function sendVpnFilesList(ctx: BotContext, chatId: number, page: number): Promise<void> {
-  const token = ctx.token;
   const offset = page * VPN_FILES_PAGE_SIZE;
   
   const [files, total] = await Promise.all([
@@ -1182,7 +1230,7 @@ async function sendVpnFilesList(ctx: BotContext, chatId: number, page: number): 
   const totalPages = Math.ceil(total / VPN_FILES_PAGE_SIZE);
   
   if (files.length === 0) {
-    await tg.sendMessage(token, chatId, '📁 No VPN files found.', {
+    await showMenu(ctx, chatId, '📁 No VPN files found.', {
       reply_markup: mainKeyboard(),
     });
     return;
@@ -1192,7 +1240,7 @@ async function sendVpnFilesList(ctx: BotContext, chatId: number, page: number): 
   text += '🔒 = encrypted (likely .npvt/.npv)\n';
   text += 'Tap a file to download.\n';
   
-  await tg.sendMessage(token, chatId, text, {
+  await showMenu(ctx, chatId, text, {
     parse_mode: 'Markdown',
     reply_markup: vpnFilesListMarkup(files, page, hasMore),
   });
@@ -1216,11 +1264,15 @@ async function handleCallback(ctx: BotContext, update: any): Promise<void> {
     return;
   }
 
+  // The tapped message becomes the live menu page (callback handlers
+  // edit it in place) — the previously tracked menu, if different, is
+  // deleted so keyboards don't pile up in the chat.
+  await adoptMenuMessage(ctx, chatId, messageId);
+
   if (data === 'menu') {
-    await tg.editMessageText(token, chatId, messageId, 'RootNet server manager — pick an option.', {
-      reply_markup: inlineMenuButton(),
+    await tg.editMessageText(token, chatId, messageId, MENU_TEXT, {
+      reply_markup: mainKeyboard(),
     });
-    await tg.sendMessage(token, chatId, MENU_TEXT, { reply_markup: mainKeyboard() });
     return;
   }
 

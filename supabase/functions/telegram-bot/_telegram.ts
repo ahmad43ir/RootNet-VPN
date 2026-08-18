@@ -87,6 +87,17 @@ export async function answerCallbackQuery(
   });
 }
 
+/** Delete one of the bot's own messages. Bots can only delete their own
+ *  messages, and only ones younger than 48 hours — failures (older/already
+ *  deleted) are logged and swallowed. */
+export async function deleteMessage(
+  token: string,
+  chatId: number,
+  messageId: number,
+): Promise<void> {
+  await callMethod(token, 'deleteMessage', { chat_id: chatId, message_id: messageId });
+}
+
 interface TgFile {
   file_path?: string;
 }

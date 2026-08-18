@@ -491,12 +491,14 @@ async def refresh_pool(
                 except (ValueError, TypeError):
                     checked_dt = None
             if r.get("last_ok") is None or r.get("last_ok") is False:
-                pool_to_test.append((0, r))  # priority 0: never tested or failed
+                pool_to_test.append((0, r.get("id") or 0, r))  # priority 0: never tested or failed
             elif checked_dt is None or (now - checked_dt) > timedelta(hours=12):
                 pool_to_test.append((1, checked_dt or now, r))  # priority 1: stale
 
-        # Sort: priority 0 first, then priority 1 by oldest checked_dt
-        pool_to_test.sort(key=lambda x: (x[0], x[1] if len(x) > 1 else now))
+        # Sort: priority 0 first, then priority 1 by oldest checked_dt. The
+        # second element is always comparable (row id / datetime) — never the
+        # row dict itself, which would blow up the tuple comparison.
+        pool_to_test.sort(key=lambda x: (x[0], x[1]))
 
         for item in pool_to_test:
             if len(to_test) >= MAX_TEST_PER_RUN:

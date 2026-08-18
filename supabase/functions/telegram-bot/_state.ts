@@ -18,6 +18,12 @@ export interface ChatState {
   pendingScrapeConfirm: boolean;
   /** Message ID of the confirm prompt (for editing on confirm/cancel). */
   scrapeMessageId: number | null;
+  /** Message ID of the current live menu/option message (deleted when a
+   *  new menu page is shown, so keyboards don't pile up). */
+  menuMessageId: number | null;
+  /** Message ID of the current live result/status message (deleted when a
+   *  new result replaces it, so scrape reports / summaries don't pile up). */
+  resultMessageId: number | null;
 }
 
 const SECRET_KEY = 'telegram_webhook_secret';
@@ -26,7 +32,7 @@ export async function getChatState(supabase: any, chatId: number): Promise<ChatS
   try {
     const { data } = await supabase
       .from('bot_chat_state')
-      .select('upload_mode, list_mode, selected_ids, pending_input, pending_scrape_confirm, scrape_message_id')
+      .select('upload_mode, list_mode, selected_ids, pending_input, pending_scrape_confirm, scrape_message_id, menu_message_id, result_message_id')
       .eq('chat_id', chatId)
       .maybeSingle();
     if (data) {
@@ -40,12 +46,14 @@ export async function getChatState(supabase: any, chatId: number): Promise<ChatS
         pendingInput: typeof data.pending_input === 'string' && data.pending_input ? data.pending_input : null,
         pendingScrapeConfirm: data.pending_scrape_confirm === true,
         scrapeMessageId: typeof data.scrape_message_id === 'number' ? data.scrape_message_id : null,
+        menuMessageId: typeof data.menu_message_id === 'number' ? data.menu_message_id : null,
+        resultMessageId: typeof data.result_message_id === 'number' ? data.result_message_id : null,
       };
     }
   } catch (e) {
     console.warn('[state] getChatState failed:', (e as Error).message);
   }
-  return { chatId, uploadMode: false, listMode: false, selectedIds: [], pendingInput: null, pendingScrapeConfirm: false, scrapeMessageId: null };
+  return { chatId, uploadMode: false, listMode: false, selectedIds: [], pendingInput: null, pendingScrapeConfirm: false, scrapeMessageId: null, menuMessageId: null, resultMessageId: null };
 }
 
 export async function saveChatState(supabase: any, state: ChatState): Promise<void> {
@@ -59,6 +67,8 @@ export async function saveChatState(supabase: any, state: ChatState): Promise<vo
         pending_input: state.pendingInput,
         pending_scrape_confirm: state.pendingScrapeConfirm,
         scrape_message_id: state.scrapeMessageId,
+        menu_message_id: state.menuMessageId,
+        result_message_id: state.resultMessageId,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'chat_id' },

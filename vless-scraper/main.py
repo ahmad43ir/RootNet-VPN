@@ -635,7 +635,16 @@ class VlessScraper:
         # When the link was scraped = the Telegram message date (shown in the app).
         scraped_at: str = _to_utc_iso(event.message.date)
 
-        if not text and not file_links:
+        # Store the raw attachment in vpn_files whenever the message carries a
+        # recognized config file — even when it's encrypted (e.g. Nepster
+        # .npvt/.npv) and yields no extractable links. The bot/app's VPN Files
+        # tab serves those for manual download/import. _upload_attachment_file
+        # dedups (filename + channel + size) and ignores non-config documents.
+        uploaded: bool = False
+        if event.message.document:
+            uploaded = await self._upload_attachment_file(event.message, channel_username, scraped_at)
+
+        if not text and not file_links and not uploaded:
             return
 
         log.info(f"📨 New message from @{channel_username} ({len(text)} chars)")
@@ -644,14 +653,11 @@ class VlessScraper:
         links: list[str] = extract_links(text)
         merged: list[str] = list(dict.fromkeys(links + file_links))
         if not merged:
-            log.info("  → No config links found")
+            if uploaded:
+                log.info("  🗄 No config links found — raw file stored to vpn_files")
+            else:
+                log.info("  → No config links found")
             return
-
-        # Upload the attachment to vpn_files ONLY when it actually yielded
-        # config links — a document with no extractable configs isn't worth
-        # the GET+POST REST calls (AGENTS.md: ≤ ~20 REST calls per run).
-        if event.message.document and file_links:
-            await self._upload_attachment_file(event.message, channel_username, scraped_at)
 
         log.info(f"🔗 Found {len(merged)} config link(s) in message")
 
@@ -1013,18 +1019,22 @@ class VlessScraper:
                 # When the link was scraped = the Telegram message date (shown in the app).
                 scraped_at: str = _to_utc_iso(msg.date)
 
-                if not text and not file_links:
+                # Store the raw attachment even when it's encrypted/unparseable
+                # (see _handle_message) so VPN Files keeps the file for manual
+                # download. Dedups and ignores non-config documents.
+                uploaded: bool = False
+                if msg.document:
+                    uploaded = await self._upload_attachment_file(msg, channel, scraped_at)
+
+                if not text and not file_links and not uploaded:
                     continue
 
                 summary["messages_seen"] += 1
                 merged: list[str] = list(dict.fromkeys(extract_links(text) + file_links))
                 if not merged:
+                    if uploaded:
+                        log.info(f"  🗄 @{channel}: no extractable config in message #{msg.id} — raw file stored to vpn_files")
                     continue
-
-                # Upload the attachment to vpn_files ONLY when it yielded
-                # config links (see _handle_message — REST-budget guard).
-                if msg.document and file_links:
-                    await self._upload_attachment_file(msg, channel, scraped_at)
 
                 summary["messages_with_links"] += 1
                 summary["links_found"] += len(merged)
