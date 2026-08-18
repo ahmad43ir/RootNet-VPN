@@ -101,17 +101,22 @@ jobs:
 
       # Report the result back to the bot chat. Sent from the BOT
       # account (BOT_TOKEN), never the user account. Runs even when
-      # the scraper step fails.
+      # the scraper step fails. Each report replaces (deletes) the
+      # previous one (tracked in scraper_config) so reports don't pile
+      # up in the chat.
       - name: Report result to Telegram
         if: ${{ always() && inputs.chat_id != '' && env.BOT_TOKEN_SET == 'true' }}
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ inputs.chat_id }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python - <<'PY'
           import json
           import os
           import re
+          import urllib.parse
           import urllib.request
 
           log_text = ""
@@ -123,19 +128,65 @@ jobs:
 
           token = os.environ["BOT_TOKEN"]
           chat = os.environ["CHAT_ID"]
+          sb_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+          sb_key = os.environ.get("SUPABASE_KEY", "")
+          report_key = f"scrape_report_message_id:{chat}"
 
 
-          def send(text):
-              data = json.dumps({"chat_id": chat, "text": text, "parse_mode": "Markdown"}).encode()
+          def api(method, body):
+              data = json.dumps(body).encode()
               req = urllib.request.Request(
-                  f"https://api.telegram.org/bot{token}/sendMessage",
+                  f"https://api.telegram.org/bot{token}/{method}",
                   data=data,
                   headers={"Content-Type": "application/json"},
               )
               try:
-                  urllib.request.urlopen(req, timeout=20)
+                  with urllib.request.urlopen(req, timeout=20) as r:
+                      return json.loads(r.read())
               except Exception as e:
-                  print(f"report send failed: {e}")
+                  print(f"report {method} failed: {e}")
+                  return None
+
+
+          def sb_request(path, method="GET", body=None):
+              if not sb_url or not sb_key:
+                  return None
+              req = urllib.request.Request(
+                  sb_url + "/rest/v1/" + path,
+                  method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={
+                      "apikey": sb_key,
+                      "Authorization": f"Bearer {sb_key}",
+                      "Content-Type": "application/json",
+                      "Prefer": "resolution=merge-duplicates",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as r:
+                      return json.loads(r.read())
+              except Exception as e:
+                  print(f"report sb {method} {path} failed: {e}")
+                  return None
+
+
+          def send(text):
+              # Replace the previous scrape report (if any) so reports
+              # don't pile up in the chat.
+              prev = (
+                  sb_request("scraper_config?select=value&key=eq." + urllib.parse.quote(report_key))
+                  if sb_url and sb_key else None
+              )
+              if prev and prev[0] and prev[0].get("value"):
+                  api("deleteMessage", {"chat_id": chat, "message_id": int(prev[0]["value"])})
+              res = api("sendMessage", {"chat_id": chat, "text": text, "parse_mode": "Markdown"})
+              mid = (res or {}).get("result", {}).get("message_id")
+              if mid and sb_url and sb_key:
+                  sb_request(
+                      "scraper_config?on_conflict=key",
+                      method="POST",
+                      body={"key": report_key, "value": str(mid)},
+                  )
 
 
           if "Run-once summary:" in log_text:
