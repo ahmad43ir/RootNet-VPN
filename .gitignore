@@ -235,3 +235,20 @@ app.*.map.json
 *.sublime-project
 *.sublime-workspace
 *.komodoproject
+
+
+# ──────────────────────────────────────────────
+# 📡 Telegram Scraper Config Files — NEVER COMMIT THESE
+# ──────────────────────────────────────────────
+# The vless-scraper downloads .npv/.npvt (Nepster/NekoBox exports) and other
+# VPN config files from Telegram channels. If a scraper run happens inside
+# the repo working tree, those files must never be committed.
+# (Note: .json and .txt are intentionally NOT ignored — the repo tracks
+# legit project files like deno.json and requirements.txt.)
+*.npv
+*.npvt
+*.npt
+*.sip
+*.conf
+*.config
+*.ovpn
