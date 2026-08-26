@@ -12,14 +12,12 @@ import { dispatchWorkflow } from './_github.ts';
 import { getChatState, saveChatState } from './_state.ts';
 import {
   addScraperProxy,
-  addBpbService,
   backfillFlags,
   checkDuplicate,
   countActiveServers,
   countVpnFiles,
   deleteAllScraperProxies,
   deleteAllServers,
-  deleteBpbService,
   deleteScraperProxy,
   deleteServer,
   deleteVpnFile,
@@ -29,13 +27,11 @@ import {
   getScraperChannels,
   getVpnFile,
   insertServer,
-  listBpbServices,
   listScraperProxies,
   listVpnFiles,
   saveVpnFile,
   setLastScrapeTime,
   setScraperChannels,
-  toggleBpbService,
   updateAppConfig,
   type InsertContext,
   type ServerRow,
@@ -79,7 +75,7 @@ const VERSION_TEXT =
   '`/forceupdate on|off` toggle force';
 
 const MENU_TEXT =
-  'RootNet VPN — official config publishing channel: @root_net_manage_bot.\n\n' +
+  'VlessHub � official config publishing channel: @Vless_hub_bot.\n\n' +
   'New VPN configs (VLESS · VMess · Trojan · SS · Hysteria2 · WireGuard · SOCKS) are published here and flow straight into the app.\n\n' +
   '📤 Upload — import configs as servers\n' +
   '🟢 Servers — list & delete servers\n' +
@@ -107,10 +103,6 @@ const BOT_COMMANDS: tg.TgBotCommand[] = [
   { command: 'setlatest', description: 'Set latest version (e.g. /setlatest 2.1.0)' },
   { command: 'setbuild', description: 'Set latest build number (e.g. /setbuild 300)' },
   { command: 'forceupdate', description: 'Toggle force update on/off' },
-  { command: 'subs', description: 'List BPB subscriptions' },
-  { command: 'addsub', description: 'Add a BPB sub (/addsub BPB-3 <url>)' },
-  { command: 'togglesub', description: 'Activate/deactivate a BPB sub' },
-  { command: 'delsub', description: 'Delete a BPB sub (/delsub BPB-1)' },
   { command: 'help', description: 'How everything works' },
 ];
 
@@ -149,11 +141,6 @@ const HELP_TEXT =
   '`/setlatest X.Y.Z` set latest version\n' +
   '`/setbuild N` set latest build number\n' +
   '`/forceupdate on|off` toggle force update\n\n' +
-  '🛰 *BPB subscriptions*\n' +
-  '`/subs` list subscriptions with active state\n' +
-  '`/addsub BPB-3 <sub url>` register a worker subscription\n' +
-  '`/togglesub BPB-3` activate/deactivate (inactive subs are skipped)\n' +
-  '`/delsub BPB-3` remove it\n\n' +
   '🌐 *Scraper settings*\n' +
   'The scraper auto-collects new VPN configs from the configured channels: `/scrape` starts a run right now (it reports back here when done); ' +
   '`/addproxy`, `/delproxy`, `/listproxy` manage the MTProto proxy pool it connects through; ' +
@@ -585,108 +572,6 @@ async function handleCommand(
       ok
         ? `✅ Force update: ${newValue ? '✅ ON' : '❌ OFF'}`
         : '⚠️ Failed to update (Supabase error).',
-      { parse_mode: 'Markdown' },
-    );
-    return;
-  }
-
-  // ── BPB subscription management ──────────────────────────────
-
-  if (command === '/subs') {
-    const rows = await listBpbServices(ctx.supabase);
-    if (!rows) {
-      await showResult(ctx, chatId, '⚠️ Could not read bpb_services from Supabase.');
-      return;
-    }
-    if (rows.length === 0) {
-      await showResult(
-        ctx,
-        chatId,
-        'No BPB subscriptions registered.\n\nAdd one: `/addsub BPB-1 https://<worker>.workers.dev/<secret>/sub`',
-        { parse_mode: 'Markdown' },
-      );
-      return;
-    }
-    const active = rows.filter((r) => r.is_active).length;
-    const lines = rows.map((r) => {
-      let host = r.sub_url;
-      try { host = new URL(r.sub_url).host; } catch { /* keep raw */ }
-      return `${r.is_active ? '✅' : '❌'} *${r.label}* — ${host}`;
-    });
-    await showResult(
-      ctx,
-      chatId,
-      `*🛰 BPB subscriptions* (${active}/${rows.length} active)\n\n${lines.join('\n')}\n\n` +
-        '`/addsub <label> <url>` · `/togglesub <label>` · `/delsub <label>`',
-      { parse_mode: 'Markdown' },
-    );
-    return;
-  }
-
-  if (command === '/addsub' || command.startsWith('/addsub ')) {
-    const arg = fullText.slice('/addsub'.length).trim();
-    const parts = arg.split(/\s+/);
-    if (parts.length < 2 || !parts[0] || !parts[1]) {
-      await showResult(
-        ctx,
-        chatId,
-        'Usage: `/addsub BPB-3 https://<worker>.workers.dev/<secret>/sub/raw`',
-        { parse_mode: 'Markdown' },
-      );
-      return;
-    }
-    const label = parts[0];
-    const url = parts.slice(1).join('');
-    if (!/^https?:\/\//i.test(url)) {
-      await showResult(ctx, chatId, '⚠️ The subscription URL must start with http:// or https://');
-      return;
-    }
-    const result = await addBpbService(ctx.supabase, label, url);
-    await showResult(
-      ctx,
-      chatId,
-      result.ok
-        ? `✅ Subscription *${label}* added and active.\nThe app's Refresh will pick it up (random pick among active subs).`
-        : `⚠️ ${result.error ?? 'Failed to add.'}`,
-      { parse_mode: 'Markdown' },
-    );
-    return;
-  }
-
-  if (command === '/delsub' || command.startsWith('/delsub ')) {
-    const label = fullText.slice('/delsub'.length).trim();
-    if (!label) {
-      await showResult(ctx, chatId, 'Usage: `/delsub BPB-1`', { parse_mode: 'Markdown' });
-      return;
-    }
-    const deleted = await deleteBpbService(ctx.supabase, label);
-    await showResult(
-      ctx,
-      chatId,
-      deleted > 0
-        ? `🗑 Deleted subscription *${label}*.`
-        : deleted === 0
-          ? `No subscription labeled *${label}*. See /subs`
-          : '⚠️ Failed to delete (Supabase error).',
-      { parse_mode: 'Markdown' },
-    );
-    return;
-  }
-
-  if (command === '/togglesub' || command.startsWith('/togglesub ')) {
-    const label = fullText.slice('/togglesub'.length).trim();
-    if (!label) {
-      await showResult(ctx, chatId, 'Usage: `/togglesub BPB-1`', { parse_mode: 'Markdown' });
-      return;
-    }
-    const next = await toggleBpbService(ctx.supabase, label);
-    await showResult(
-      ctx,
-      chatId,
-      next === null
-        ? `No subscription labeled *${label}*. See /subs`
-        : `${next ? '✅ Activated' : '❌ Deactivated'} *${label}*.` +
-            (next ? '' : '\nInactive subs are skipped by the app.'),
       { parse_mode: 'Markdown' },
     );
     return;
