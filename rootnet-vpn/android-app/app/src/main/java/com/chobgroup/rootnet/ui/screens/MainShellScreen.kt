@@ -11,14 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,12 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chobgroup.rootnet.core.theme.BackgroundGradient
 import com.chobgroup.rootnet.core.theme.RootNetColors
+import com.chobgroup.rootnet.ui.icons.AppIcons
 
 /**
  * Main shell — v3 VPN app. Three tabs:
- *  1. **VPN**      — connection ring + ad-funded time quota
- *  2. **Servers**  — server/config list with ping, copy/export/connect
- *  3. **Settings** — about + privacy + client help
+ *  1. **VPN**      — one-tap connect + status + ad-funded time quota
+ *  2. **Servers**  — server list with search, ping, quality, selection
+ *  3. **Settings** — connection prefs + about + privacy
  */
 @Composable
 fun MainShellScreen() {
@@ -49,9 +46,9 @@ fun MainShellScreen() {
         bottomBar = {
             BottomBar(
                 items = listOf(
-                    BottomBarItem(0, "VPN", Icons.Outlined.PlayArrow, Icons.Filled.PlayArrow),
-                    BottomBarItem(1, "Servers", Icons.Outlined.List, Icons.Filled.List),
-                    BottomBarItem(2, "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
+                    BottomBarItem(0, "VPN", AppIcons.Shield),
+                    BottomBarItem(1, "Servers", AppIcons.Globe),
+                    BottomBarItem(2, "Settings", Icons.Filled.Settings),
                 ),
                 currentTab = currentTab,
                 onSelect = { currentTab = it },
@@ -65,7 +62,10 @@ fun MainShellScreen() {
                 .background(BackgroundGradient),
         ) {
             when (currentTab) {
-                0 -> ConnectionScreen()
+                0 -> ConnectionScreen(
+                    onOpenServers = { currentTab = 1 },
+                    onOpenSettings = { currentTab = 2 },
+                )
                 1 -> ServerListScreen()
                 else -> SettingsScreen()
             }
@@ -76,11 +76,10 @@ fun MainShellScreen() {
 private data class BottomBarItem(
     val index: Int,
     val label: String,
-    val outlined: ImageVector,
-    val filled: ImageVector,
+    val icon: ImageVector,
 )
 
-/** Custom neon bottom bar (the M3 NavigationBar API isn't resolving in this BOM). */
+/** Modern bottom bar — single icon per destination, accent on selected. */
 @Composable
 private fun BottomBar(
     items: List<BottomBarItem>,
@@ -100,15 +99,17 @@ private fun BottomBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
-                        if (selected) item.filled else item.outlined,
+                        item.icon,
                         contentDescription = item.label,
                         tint = if (selected) RootNetColors.AccentNeon else RootNetColors.TextMuted,
+                        modifier = Modifier.height(22.dp),
                     )
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         item.label,
                         color = if (selected) RootNetColors.AccentNeon else RootNetColors.TextMuted,
                         fontSize = 11.sp,
+                        fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Medium,
                     )
                 }
             }

@@ -494,11 +494,12 @@ async function handleImportVless(
 // or { servers: [] } when no sub is configured/reachable (client falls back
 // to its Supabase list).
 
-const VLESS_RE = /vless:\/\/[^\s"'<>]+/g;
+// BPB subs ship a MIX of vless:// and trojan:// links — extract both.
+const CONFIG_RE = /(?:vless|trojan):\/\/[^\s"'<>]+/g;
 
 function decodeSubBody(raw: string): string {
   const trimmed = raw.trim();
-  if (trimmed.includes('vless://')) return trimmed;
+  if (trimmed.includes('vless://') || trimmed.includes('trojan://')) return trimmed;
   try {
     // Standard V2Ray subs ship base64-encoded link lists.
     const binary = atob(trimmed.replace(/\s+/g, ''));
@@ -543,7 +544,7 @@ async function handleBpbSub(supabase: any, req: Request): Promise<Response> {
     }
 
     const decoded = decodeSubBody(body);
-    const links = [...new Set(decoded.match(VLESS_RE) ?? [])]
+    const links = [...new Set(decoded.match(CONFIG_RE) ?? [])]
       .map((l) => l.trim().replace(/[.,;:]+$/, ''));
 
     const servers = links.map((link, i) => {

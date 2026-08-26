@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Full-screen background gradient (deep forest → darker emerald). */
+/** Full-screen background gradient (near-black green → primary background). */
 val BackgroundGradient: Brush = Brush.verticalGradient(
-    colors = listOf(RootNetColors.BgDeepForest, Color(0xFF07120C)),
+    colors = listOf(Color(0xFF04120C), RootNetColors.BgDeepForest),
 )
 
 private val DarkColors = darkColorScheme(

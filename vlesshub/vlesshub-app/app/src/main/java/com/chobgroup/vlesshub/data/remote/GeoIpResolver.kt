@@ -78,6 +78,8 @@ object GeoIpResolver {
     fun flagEmoji(countryCode: String): String {
         val code = countryCode.trim().uppercase()
         if (code.length != 2 || code.any { it !in 'A'..'Z' }) return ""
-        return code.map { Character.toChars(0x1F1E6 + (it - 'A')) }.joinToString("")
+        val sb = StringBuilder()
+        for (c in code) sb.append(String(Character.toChars(0x1F1E6 + (c - 'A'))))
+        return sb.toString()
     }
 }

@@ -199,7 +199,8 @@ private fun JSONObject.toVpnFile(): VpnFile = VpnFile(
 
 private fun JSONObject.toVpnServer(): VpnServer = VpnServer(
     name = optString("name", "Server"),
-    flag = optString("flag", "\uD83C\uDF10"),
+    // Older builds could persist a broken CharArray flag ("[C@…") — clean it.
+    flag = optString("flag", "\uD83C\uDF10").let { if (it.contains("[C@") || it.contains("[C")) "\uD83D\uDEF0" else it },
     country = optString("country", "Cloud"),
     rawConfig = optString("rawConfig", ""),
     type = ProtocolType.fromString(optString("type")),

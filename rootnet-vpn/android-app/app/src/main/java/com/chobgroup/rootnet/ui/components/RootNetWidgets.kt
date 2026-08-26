@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.chobgroup.rootnet.core.theme.RootNetColors
 
 /**
- * Shared "cyber-organic" primitives — the professional login-screen visual
+ * Shared "cyber-organic" primitives — the app's signature dark neon visual
  * language, factored out so every screen stays consistent. Dark theme only,
  * every color from [RootNetColors].
  */
@@ -124,7 +124,7 @@ fun MicroLabel(
 }
 
 /**
- * Rounded capsule chip — the login trust-pill shape, in any status color.
+ * Rounded capsule chip — status-pill shape, in any status color.
  * `filled = true` uses the color as fill with dark text (neon button style).
  */
 @Composable

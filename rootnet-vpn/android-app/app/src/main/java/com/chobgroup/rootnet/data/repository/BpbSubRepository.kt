@@ -6,7 +6,6 @@ import com.chobgroup.rootnet.data.model.ProtocolType
 import com.chobgroup.rootnet.data.model.VpnServer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.URLDecoder
 import android.util.Base64
 
 /**
@@ -20,8 +19,12 @@ import android.util.Base64
  */
 object BpbSubRepository {
 
-    /** Regex over the decoded sub body â€” every vless:// link. */
-    private val VLESS_RE = Regex("vless://[^\\s\"'<>]+")
+    /** Regex over the decoded sub body — vless:// AND trojan:// links. */
+    private val CONFIG_RE = Regex("(?:vless|trojan)://[^\\s\"'<>]+")
+
+    /** Protocol from the link scheme (BPB subs mix VLESS and Trojan). */
+    private fun protocolOf(link: String): ProtocolType =
+        if (link.startsWith("trojan://", ignoreCase = true)) ProtocolType.TROJAN else ProtocolType.VLESS
 
     fun subscriptionUrls(): List<String> =
         AppConstants.SUBSCRIPTION_URLS.filter { it.isNotBlank() }
@@ -60,11 +63,11 @@ object BpbSubRepository {
                 val rawConfig = s.optString("rawConfig")
                 if (rawConfig.isBlank()) continue
                 result += VpnServer(
-                    name = s.optString("name", "BPB"),
+                    name = "Server ${result.size + 1}",
                     flag = s.optString("flag", "\uD83D\uDEF0"),
                     country = s.optString("country", "BPB service"),
                     rawConfig = rawConfig,
-                    type = ProtocolType.VLESS,
+                    type = protocolOf(rawConfig),
                     configFormat = ConfigFormat.LINK,
                 )
             }
@@ -81,11 +84,11 @@ object BpbSubRepository {
         connection.readTimeout = 15_000
         try {
             if (connection.responseCode !in 200..299) return emptyList()
-            val raw = connection.inputStream.bufferedReader().readText()
-            val body = decodeBody(raw)
-            return VLESS_RE.findAll(body)
-                .map { it.value.trimEnd('.') }
-                .distinct()
+        val raw = connection.inputStream.bufferedReader().readText()
+        val body = decodeBody(raw)
+        return CONFIG_RE.findAll(body)
+            .map { it.value.trimEnd('.') }
+            .distinct()
                 .mapIndexed { index, link -> toServer(link, url, index) }
                 .toList()
         } finally {
@@ -96,25 +99,19 @@ object BpbSubRepository {
     /** Sub bodies may be plain text or base64 (standard V2Ray subs). */
     private fun decodeBody(raw: String): String {
         val trimmed = raw.trim()
-        if (trimmed.contains("vless://")) return trimmed
+        if (trimmed.contains("vless://") || trimmed.contains("trojan://")) return trimmed
         return runCatching {
             String(Base64.decode(trimmed, Base64.DEFAULT), Charsets.UTF_8)
         }.getOrElse { trimmed }
     }
 
     private fun toServer(link: String, subUrl: String, index: Int): VpnServer {
-        val fragment = link.substringAfter("#", "")
-        val decodedName = runCatching { URLDecoder.decode(fragment, "UTF-8") }.getOrDefault(fragment)
-        val name = decodedName.substringBefore("|").substringBefore(" ")
-            .ifBlank { "BPB-${index + 1}" }
-        // Tag each server with which sub it came from.
-        val subTag = subUrl.substringAfter("://").substringBefore("/").take(24)
         return VpnServer(
-            name = "$name Â· $subTag".take(48),
-            flag = "ðŸ›°",
+            name = "Server ${index + 1}",
+            flag = "\uD83D\uDEF0",
             country = "BPB service",
             rawConfig = link,
-            type = ProtocolType.VLESS,
+            type = protocolOf(link),
             configFormat = ConfigFormat.LINK,
         )
     }

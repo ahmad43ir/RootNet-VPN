@@ -4,8 +4,7 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /**
- * Crashlytics wrapper — spec §11.6. Ports the original `crashlytics_service.dart`:
- * non-fatal error recording, user-ID association on login/logout, breadcrumb
+ * Crashlytics wrapper — spec A11.6. Non-fatal error recording and breadcrumb
  * logging. All methods degrade gracefully — a reporting failure never crashes
  * the app. Only enabled from release builds ([enable] is called there).
  */
@@ -42,20 +41,5 @@ object CrashlyticsService {
     fun setCustomKey(key: String, value: String) {
         if (!enabled) return
         runCatching { FirebaseCrashlytics.getInstance().setCustomKey(key, value) }
-    }
-
-    /** Associate the current user with subsequent crash reports (call on login). */
-    fun onUserLoggedIn(userId: String) {
-        if (!enabled) return
-        runCatching {
-            FirebaseCrashlytics.getInstance().setUserId(userId)
-            Log.i(TAG, "User ID set — ${userId.take(8)}...")
-        }
-    }
-
-    /** Clear the user association (call on logout). */
-    fun onUserLoggedOut() {
-        if (!enabled) return
-        runCatching { FirebaseCrashlytics.getInstance().setUserId("") }
     }
 }

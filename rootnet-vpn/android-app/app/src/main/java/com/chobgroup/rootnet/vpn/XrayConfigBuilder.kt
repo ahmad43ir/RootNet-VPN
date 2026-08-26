@@ -12,11 +12,21 @@ import org.json.JSONObject
  */
 object XrayConfigBuilder {
 
-    fun build(config: UnifiedConfig): String {
+    /**
+     * @param tunFd the Android TUN file descriptor. Per libXray ≥26.x, SetTunFd
+     *   was removed — the fd MUST go into the config root `env` object as
+     *   `xray.tun.fd` (a process env var is NOT visible to the Go runtime).
+     */
+    fun build(config: UnifiedConfig, tunFd: Int): String {
         val root = JSONObject()
         root.put(
             "log",
-            JSONObject().put("loglevel", "warning"),
+            JSONObject().put("loglevel", "info"),
+        )
+        // Hand the TUN fd to Xray (libXray reads this from the config env).
+        root.put(
+            "env",
+            JSONObject().put("xray.tun.fd", tunFd.toString()),
         )
         root.put(
             "dns",
@@ -69,17 +79,33 @@ object XrayConfigBuilder {
                 .put("domainStrategy", "IPIfNonMatch")
                 .put(
                     "rules",
-                    JSONArray().put(
+                    JSONArray()
+                        // Client DNS (UDP:53) must NOT enter the proxy — plain
+                        // VLESS-over-WS can't carry UDP. Send it out via the
+                        // protected socket instead. Real destinations are still
+                        // proxied because sniffing replaces targets with the
+                        // true hostname, which Cloudflare resolves remotely.
+                        .put(
+                            JSONObject()
+                                .put("network", "udp")
+                                .put("port", 53)
+                                .put("outboundTag", "direct"),
+                        )
                         // Block QUIC so YouTube etc. fall back to TCP through the tunnel.
-                        JSONObject()
-                            .put("network", "udp")
-                            .put("port", 443)
-                            .put("outboundTag", "block"),
-                    ),
+                        .put(
+                            JSONObject()
+                                .put("network", "udp")
+                                .put("port", 443)
+                                .put("outboundTag", "block"),
+                        ),
                 ),
         )
         return root.toString()
     }
+
+    /** Outbound-only config — used by pingBatch to test a single server. */
+    fun buildOutboundJson(config: UnifiedConfig): String =
+        JSONObject().put("outbounds", JSONArray().put(buildProxyOutbound(config))).toString()
 
     private fun buildProxyOutbound(c: UnifiedConfig): JSONObject {
         val settings = JSONObject()

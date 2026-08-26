@@ -1,8 +1,5 @@
 package com.chobgroup.rootnet.ui.screens
 
-import android.net.VpnService
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -10,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +42,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,12 +72,18 @@ import com.chobgroup.rootnet.data.repository.ServerCacheStore
 import com.chobgroup.rootnet.data.remote.GeoIpResolver
 import com.chobgroup.rootnet.ui.components.GlassCard
 import com.chobgroup.rootnet.ui.components.PulsingOrb
+import com.chobgroup.rootnet.ui.components.QualityDots
+import com.chobgroup.rootnet.ui.components.SecondaryButton
+import com.chobgroup.rootnet.ui.components.SearchField
 import com.chobgroup.rootnet.ui.components.StatusChip
 import com.chobgroup.rootnet.ui.icons.AppIcons
 import com.chobgroup.rootnet.vpn.EngineState
-import com.chobgroup.rootnet.vpn.TimeQuotaManager
 import com.chobgroup.rootnet.vpn.VpnEngineService
+import com.chobgroup.rootnet.vpn.XrayConfigBuilder
+import libXray.LibXray
 import kotlinx.coroutines.Dispatchers
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
@@ -103,13 +112,21 @@ fun ServerListScreen() {
     var geoBusy by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
-    var connectingConfig by remember { mutableStateOf<String?>(null) }
-    var pendingConnect by remember { mutableStateOf<VpnServer?>(null) }
+
+    // Live engine state — which config is connecting/connected right now.
+    val engineState by EngineState.state
+    val activeConfigRaw by EngineState.activeConfig
 
     // ── Video-gate state ────────────────────────────────────────────────
     var gate by remember { mutableStateOf<GateState?>(null) }
     var gatePurpose by remember { mutableStateOf(GatePurpose.CONNECT) }
     var pendingGateAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // Server picker
+    var query by remember { mutableStateOf("") }
+    var selectedConfig by remember { mutableStateOf(cache.selectedConfig()) }
+    var pendingSwitch by remember { mutableStateOf<VpnServer?>(null) }
+    var twoColumns by remember { mutableStateOf(cache.twoColumnMode()) }
 
     /** GeoIP enrichment — replaces the placeholder flag/country on each card
      *  with the real location of the config's host (`geo-api`, per-host cache).
@@ -132,27 +149,21 @@ fun ServerListScreen() {
         }
     }
 
-    // BPB-only source; old scraped-server caches are ignored.
+    // BPB-only source. Show the cached list INSTANTLY — never auto-fetch.
+    // Servers load ONLY when the user presses the refresh icon.
     LaunchedEffect(Unit) {
         val hidden = cache.hiddenConfigs()
         val cached = cache.cachedServers()
             .filterNot { it.rawConfig in hidden }
-            .filter { it.name.contains("BPB", ignoreCase = true) }
+            .filter { it.rawConfig.startsWith("vless://") || it.rawConfig.startsWith("trojan://") }
         if (cached.isNotEmpty()) {
             servers = cached
-            loading = false
-        } else {
-            val fetched = BpbSubRepository.fetchRandomSub()
-            if (!fetched.isNullOrEmpty()) {
-                cache.saveServers(fetched)
-                servers = fetched
-            }
-            loading = false
         }
+        loading = false
         enrichGeoFlags()
     }
 
-    /** Refresh — video first, then one random BPB subscription. */
+    /** Refresh — every 3rd press plays a picture ad; refetches a random sub. */
     LaunchedEffect(refreshKey) {
         if (refreshKey > 0) {
             loading = true
@@ -160,6 +171,7 @@ fun ServerListScreen() {
             if (fetched != null) {
                 val visible = fetched.filterNot { it.rawConfig in cache.hiddenConfigs() }
                 cache.saveServers(visible)
+                cache.setLastSubFetch(System.currentTimeMillis())
                 servers = visible
             } else {
                 snackbar.showSnackbar("Couldn't reach the subscriptions - try again")
@@ -191,9 +203,22 @@ fun ServerListScreen() {
         }
     }
 
-    fun refreshGate() = runGate(GatePurpose.REFRESH) {
-        refreshKey++
-        scope.launch { snackbar.showSnackbar("Refreshed - new servers loaded") }
+    /** Refresh — every 3rd press (persisted across app restarts) shows a
+     *  PICTURE ad first. If the ad can't load, the refresh still completes. */
+    fun refreshGate() {
+        val count = cache.refreshCount() + 1
+        cache.setRefreshCount(count)
+        val doRefresh: () -> Unit = {
+            refreshKey++
+            scope.launch { snackbar.showSnackbar("Refreshed — new servers loaded") }
+            Unit
+        }
+        if (count % 3 == 0) {
+            AdiveryAdsManager.maybeShowInterstitial(onFinished = doRefresh)
+                .also { shown -> if (!shown) doRefresh() }
+        } else {
+            doRefresh()
+        }
     }
 
     fun cancelGate() {
@@ -205,49 +230,6 @@ fun ServerListScreen() {
         val action = pendingGateAction ?: return
         gate = null
         runGate(gatePurpose, action)
-    }
-
-    val vpnPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { _ ->
-        // OK only when the user accepted the VPN consent dialog.
-        pendingConnect?.let { launchEngine(context, it) }
-        pendingConnect = null
-    }
-
-    fun doConnect(server: VpnServer) {
-        connectingConfig = server.rawConfig
-        EngineState.set(EngineState.ConnState.CONNECTING)
-        val consent = VpnService.prepare(context)
-        if (consent != null) {
-            pendingConnect = server
-            vpnPermissionLauncher.launch(consent)
-            return
-        }
-        launchEngine(context, server)
-    }
-
-    fun connectServer(server: VpnServer) {
-        if (EngineState.state.value == EngineState.ConnState.CONNECTED ||
-            EngineState.state.value == EngineState.ConnState.CONNECTING
-        ) {
-            // Already connected — tapping again disconnects.
-            VpnEngineService.disconnect(context)
-            connectingConfig = null
-            return
-        }
-        if (!TimeQuotaManager.hasTime(context)) {
-            // Clock dry — a full rewarded watch grants 30 min (60 min cap).
-            runGate(GatePurpose.CONNECT) {
-                scope.launch {
-                    TimeQuotaManager.syncWithServer(context, watchAd = true)
-                        ?: TimeQuotaManager.applyAdGrant(context, connected = false)
-                    doConnect(server)
-                }
-            }
-            return
-        }
-        doConnect(server)
     }
 
     // ── ⠇ menu actions ────────────────────────────────────────────────
@@ -296,16 +278,26 @@ fun ServerListScreen() {
                 }
                 IconButton(
                     onClick = {
+                        if (EngineState.state.value == EngineState.ConnState.CONNECTED ||
+                            EngineState.state.value == EngineState.ConnState.CONNECTING
+                        ) {
+                            scope.launch { snackbar.showSnackbar("Disconnect first — pinging uses the VPN engine") }
+                            return@IconButton
+                        }
                         scope.launch {
                             pinging = true
                             val updated = servers.toMutableList()
+                            // Real config ping via libXray pingBatch (5 per batch).
+                            val results = realPingServers(updated)
                             for (i in updated.indices) {
-                                val ms = pingServer(updated[i])
-                                updated[i] = updated[i].copy(pingMs = ms)
-                                servers = updated.toList()
+                                results[updated[i].rawConfig]?.let { ms ->
+                                    updated[i] = updated[i].copy(pingMs = ms)
+                                    servers = updated.toList()
+                                }
                             }
                             cache.saveServers(updated)
                             pinging = false
+                            scope.launch { snackbar.showSnackbar("Ping test finished") }
                         }
                     },
                     enabled = !loading && !pinging && servers.isNotEmpty() && gate == null,
@@ -313,23 +305,28 @@ fun ServerListScreen() {
                     if (pinging) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = RootNetColors.AccentNeon, strokeWidth = 2.dp)
                     } else {
-                        Icon(AppIcons.NetworkCheck, contentDescription = "Ping servers", tint = RootNetColors.AccentNeon)
+                        Icon(AppIcons.Speed, contentDescription = "Ping servers", tint = RootNetColors.AccentNeon)
                     }
                 }
-                Surface(
+                // Refresh — icon only; spins while the list reloads.
+                IconButton(
                     onClick = { if (!loading && gate == null) refreshGate() },
                     enabled = !loading && gate == null,
-                    shape = RoundedCornerShape(10.dp),
-                    color = RootNetColors.AccentNeon.copy(alpha = 0.1f),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Refresh, contentDescription = null, tint = RootNetColors.AccentNeon, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Refresh servers", color = RootNetColors.AccentNeon, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
-                    }
+                    val spin = rememberInfiniteTransition(label = "refreshSpin").animateFloat(
+                        initialValue = 0f,
+                        targetValue = 360f,
+                        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing)),
+                        label = "refreshAngle",
+                    )
+                    Icon(
+                        Icons.Filled.Refresh,
+                        contentDescription = "Refresh servers",
+                        tint = if (loading) RootNetColors.TextMuted else RootNetColors.AccentNeon,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .graphicsLayer { rotationZ = if (loading) spin.value else 0f },
+                    )
                 }
                 Box {
                     IconButton(onClick = { menuOpen = true }, enabled = !loading && gate == null) {
@@ -347,6 +344,14 @@ fun ServerListScreen() {
                         DropdownMenuItem(
                             text = { Text("Restore hidden servers") },
                             onClick = { menuOpen = false; restoreHidden() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(if (twoColumns) "Layout: 2 columns ✓" else "Layout: 2 columns") },
+                            onClick = {
+                                menuOpen = false
+                                twoColumns = !twoColumns
+                                cache.setTwoColumnMode(twoColumns)
+                            },
                         )
                     }
                 }
@@ -370,18 +375,110 @@ fun ServerListScreen() {
                                 Spacer(Modifier.height(16.dp))
                                 Text("No servers available", color = RootNetColors.TextSecondary, fontSize = 14.sp)
                                 Spacer(Modifier.height(6.dp))
-                                Text("Tap Refresh servers", color = RootNetColors.TextMuted, fontSize = 12.sp)
+                                Text("Tap the refresh icon above to load servers", color = RootNetColors.TextMuted, fontSize = 12.sp)
                             }
                         }
-                        else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(servers.distinctBy { it.rawConfig }, key = { it.rawConfig }) { server ->
-                                ConfigCard(
-                                    server = server,
-                                    connectingThis = connectingConfig == server.rawConfig,
-                                    onConnect = { connectServer(server) },
+                        else -> {
+                            val all = servers.distinctBy { it.rawConfig }
+                            // While pinging, keep the list order FROZEN so each
+                            // result visibly lands on its row, one by one.
+                            val visible = all
+                                .filter {
+                                    query.isBlank() ||
+                                        it.name.contains(query, true) ||
+                                        it.country.contains(query, true)
+                                }
+                                .let {
+                                    if (pinging) it
+                                    else it.sortedWith(
+                                        compareBy<VpnServer> { s -> if (s.pingMs == null || s.pingMs < 0) 1 else 0 }
+                                            .thenBy { s -> s.pingMs ?: Int.MAX_VALUE },
+                                    )
+                                }
+
+                            @Composable fun HeaderItem(modifier: Modifier = Modifier) {
+                                SearchField(
+                                    value = query,
+                                    onValueChange = { query = it },
+                                    hint = "Search locations",
+                                    modifier = modifier.padding(bottom = 4.dp),
                                 )
                             }
-                            item { Spacer(Modifier.height(8.dp)) }
+                            @Composable fun EmptyItem(modifier: Modifier = Modifier) {
+                                Column(modifier.fillMaxWidth().padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        if (query.isBlank()) "No servers available" else "No matches for \"$query\"",
+                                        color = RootNetColors.TextSecondary,
+                                        fontSize = 14.sp,
+                                    )
+                                    if (query.isNotBlank()) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Try a different country or name", color = RootNetColors.TextMuted, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                            @Composable fun SectionItem(modifier: Modifier = Modifier) {
+                                Text(
+                                    "Recommended — fastest first",
+                                    color = RootNetColors.TextSecondary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = modifier.padding(top = 2.dp, bottom = 2.dp, start = 4.dp),
+                                )
+                            }
+                            @Composable fun CardItem(server: VpnServer, modifier: Modifier = Modifier) {
+                                val isActive = activeConfigRaw == server.rawConfig &&
+                                    (engineState == EngineState.ConnState.CONNECTED ||
+                                        engineState == EngineState.ConnState.CONNECTING)
+                                ConfigCard(
+                                    server = server,
+                                    selected = selectedConfig == server.rawConfig,
+                                    active = isActive && engineState == EngineState.ConnState.CONNECTED,
+                                    connectingThis = isActive && engineState == EngineState.ConnState.CONNECTING,
+                                    onSelect = {
+                                        if (isActive) {
+                                            scope.launch { snackbar.showSnackbar("This is your current tunnel") }
+                                        } else if (engineState == EngineState.ConnState.CONNECTED ||
+                                            engineState == EngineState.ConnState.CONNECTING
+                                        ) {
+                                            pendingSwitch = server
+                                        } else {
+                                            cache.selectServer(server)
+                                            selectedConfig = server.rawConfig
+                                            scope.launch { snackbar.showSnackbar("Selected ${server.country} — connect from the VPN tab") }
+                                        }
+                                    },
+                                    modifier = modifier,
+                                )
+                            }
+
+                            if (twoColumns) {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) { HeaderItem() }
+                                    if (visible.isEmpty()) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) { EmptyItem() }
+                                    } else {
+                                        item(span = { GridItemSpan(maxLineSpan) }) { SectionItem() }
+                                    }
+                                    gridItems(visible, key = { it.rawConfig }) { server -> CardItem(server) }
+                                    item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
+                                }
+                            } else {
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    item { HeaderItem() }
+                                    if (visible.isEmpty()) {
+                                        item { EmptyItem() }
+                                    } else {
+                                        item { SectionItem() }
+                                    }
+                                    items(visible, key = { it.rawConfig }) { server -> CardItem(server) }
+                                    item { Spacer(Modifier.height(8.dp)) }
+                                }
+                            }
                         }
                     }
                 }
@@ -398,56 +495,99 @@ fun ServerListScreen() {
         }
 
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp))
+
+        // Confirm before silently dropping an active connection.
+        pendingSwitch?.let { server ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { pendingSwitch = null },
+                title = { Text("Switch server?") },
+                text = {
+                    Text(
+                        "This will disconnect the current session and select ${server.country} as your server.",
+                        color = RootNetColors.TextSecondary,
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        cache.selectServer(server)
+                        selectedConfig = server.rawConfig
+                        VpnEngineService.disconnect(context)
+                        pendingSwitch = null
+                        scope.launch { snackbar.showSnackbar("Switched to ${server.country}") }
+                    }) { Text("Switch", color = RootNetColors.AccentNeon, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingSwitch = null }) {
+                        Text("Cancel", color = RootNetColors.TextSecondary)
+                    }
+                },
+                containerColor = RootNetColors.BgCard,
+            )
+        }
     }
 }
 
-/** Launches the engine for a server — shared by the direct path and the
- *  VPN-consent callback (file level so both can call it). */
-private fun launchEngine(context: android.content.Context, server: VpnServer) {
-    VpnEngineService.connect(
-        context,
-        raw = server.rawConfig,
-        format = server.configFormat.name.lowercase(),
-        protocol = server.type.wireName,
-    )
-}
 
-/** The server card — the only action is Connect. */
+/** The server card — tap to SELECT (highlight); connecting happens on the VPN tab. */
 @Composable
 private fun ConfigCard(
     server: VpnServer,
+    selected: Boolean,
+    active: Boolean,
     connectingThis: Boolean,
-    onConnect: () -> Unit,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val borderColor = when {
+        active -> RootNetColors.AccentNeon
+        selected -> RootNetColors.AccentNeon.copy(alpha = 0.55f)
+        else -> RootNetColors.CardBorder.copy(alpha = 0.4f)
+    }
     GlassCard(
         shape = MaterialTheme.shapes.medium,
-        borderColor = RootNetColors.CardBorder.copy(alpha = 0.4f),
+        borderColor = borderColor,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onSelect),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    server.name,
-                    color = RootNetColors.TextPrimary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(2.dp))
-                val meta = buildList {
-                    add("protocol: ${server.type.displayName}")
-                    add("${server.flag} ${server.country}".trim())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Flag inline at text size — never bigger than the label.
+                    Text(
+                        server.flag.ifBlank { "" },
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                    )
+                    if (server.flag.isNotBlank()) Spacer(Modifier.width(6.dp))
+                    Text(
+                        server.country,
+                        color = RootNetColors.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (active || selected) {
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            AppIcons.ShieldCheck,
+                            contentDescription = if (active) "Active" else "Selected",
+                            tint = RootNetColors.AccentNeon,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    meta.joinToString(" · "),
+                    "${server.name} · ${server.type.displayName}",
                     color = RootNetColors.TextMuted,
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            Spacer(Modifier.size(8.dp))
+            QualityDots(server.pingMs)
             server.pingMs?.let { ms ->
                 Spacer(Modifier.size(8.dp))
                 val timedOut = ms < 0
@@ -460,15 +600,16 @@ private fun ConfigCard(
                 StatusChip(text = if (timedOut) "Timeout" else "${ms}ms", color = pingColor)
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionButton(
-                label = if (connectingThis) "Connecting…" else "Connect",
-                icon = AppIcons.SystemUpdate,
-                busy = connectingThis,
-                enabled = !connectingThis,
-                onClick = onConnect,
-            )
+        if (connectingThis) {
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(12.dp), color = RootNetColors.Warning, strokeWidth = 2.dp)
+                Spacer(Modifier.width(6.dp))
+                Text("Connecting…", color = RootNetColors.Warning, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+        } else if (active) {
+            Spacer(Modifier.height(8.dp))
+            Text("Connected — this is your tunnel", color = RootNetColors.AccentNeon, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -574,56 +715,65 @@ private fun NeonGateButton(label: String, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun ActionButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    enabled: Boolean = true,
-    busy: Boolean = false,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(10.dp),
-        color = RootNetColors.AccentNeon.copy(alpha = 0.1f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (busy) {
-                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = RootNetColors.AccentNeon, strokeWidth = 2.dp)
-            } else {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = RootNetColors.AccentNeon)
-            }
-            Spacer(Modifier.width(6.dp))
-            Text(label, color = RootNetColors.AccentNeon, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
 
 /**
- * Real TCP connect-time ping to the config's address:port (5s timeout).
- * Returns latency ms, or **-1** on failure/timeout; `null` = not yet pinged.
+ * REAL config ping via libXray `pingBatch`: spins a temporary Xray instance
+ * and pushes an actual request through each outbound — same test v2rayNG
+ * does. A TCP-reachable edge with a dead config now correctly shows Timeout.
+ * Batches of 5 (libXray limit); delay 10000 = error, 11000 = timeout.
  */
-private suspend fun pingServer(server: VpnServer): Int = withContext(Dispatchers.IO) {
-    runCatching {
-        val config = ConfigNormalizer.normalize(
-            raw = server.rawConfig,
-            configFormat = server.configFormat.name.lowercase(),
-            protocol = server.type.wireName,
-        )
-        val start = System.nanoTime()
-        val socket = Socket()
-        try {
-            socket.connect(InetSocketAddress(config.address, config.port), 5000)
-        } finally {
-            socket.close()
+private suspend fun realPingServers(servers: List<VpnServer>): Map<String, Int> =
+    withContext(Dispatchers.IO) {
+        val results = mutableMapOf<String, Int>()
+        data class Entry(val rawConfig: String, val xrayJson: String)
+        val entries = servers.mapNotNull { s ->
+            runCatching {
+                Entry(
+                    s.rawConfig,
+                    XrayConfigBuilder.buildOutboundJson(
+                        ConfigNormalizer.normalize(
+                            raw = s.rawConfig,
+                            configFormat = s.configFormat.name.lowercase(),
+                            protocol = s.type.wireName,
+                        ),
+                    ),
+                )
+            }.getOrNull()
         }
-        ((System.nanoTime() - start) / 1_000_000).toInt()
-    }.getOrDefault(-1)
-}
+        entries.chunked(5).forEach { chunk ->
+            val configs = JSONArray()
+            chunk.forEach { configs.put(JSONObject().put("xrayJson", it.xrayJson)) }
+            val request = JSONObject()
+                .put("apiVersion", 2)
+                .put("method", "pingBatch")
+                .put(
+                    "payload",
+                    JSONObject()
+                        .put("configs", configs)
+                        .put("timeout", 5)
+                        .put("url", "https://cp.cloudflare.com/"),
+                )
+            val response = runCatching { libXray.LibXray.invoke(request.toString()) }.getOrNull()
+                ?: return@forEach
+            runCatching {
+                val obj = JSONObject(response)
+                if (!obj.optBoolean("success", false)) return@runCatching
+                val arr = obj.optJSONObject("data")?.optJSONArray("results") ?: return@runCatching
+                for (i in 0 until arr.length()) {
+                    val item = arr.optJSONObject(i) ?: continue
+                    val entry = chunk.getOrNull(i) ?: continue
+                    results[entry.rawConfig] = when {
+                        item.optBoolean("success", false) -> {
+                            val ms = item.optInt("delay", -1)
+                            if (ms in 1..9999) ms else -1
+                        }
+                        else -> -1
+                    }
+                }
+            }.getOrNull()
+        }
+        results
+    }
 
 /**
  * GeoIP lookup for a server card: extracts the config's host address and

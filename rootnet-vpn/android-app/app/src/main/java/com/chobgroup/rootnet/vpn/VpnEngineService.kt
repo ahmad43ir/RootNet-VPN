@@ -64,6 +64,7 @@ class VpnEngineService : VpnService() {
 
     private fun startEngine(raw: String, format: String, protocol: String) {
         if (!busy.compareAndSet(false, true)) return
+        EngineState.setActiveConfig(raw)
         EngineState.set(EngineState.ConnState.CONNECTING)
 
         if (!TimeQuotaManager.hasTime(this)) {
@@ -85,11 +86,14 @@ class VpnEngineService : VpnService() {
         }
         tunPfd = pfd
         val fd = pfd.detachFd()
-        runCatching { Os.setenv("xray.tun.fd", fd.toString(), true) }
+
+        // Go's resolver must not hit Android's loopback DNS while the VPN is
+        // up — pin it to a protected resolver for the lifetime of the core.
+        runCatching { LibXray.setDNS(Protector(), "1.1.1.1:53") }
 
         startForeground(NOTIFICATION_ID, notification())
 
-        val json = runCatching { XrayConfigBuilder.build(unified) }.getOrElse {
+        val json = runCatching { XrayConfigBuilder.build(unified, fd) }.getOrElse {
             fail(it.message ?: "Config error")
             return
         }
@@ -101,6 +105,19 @@ class VpnEngineService : VpnService() {
                 fail(response.take(180))
                 return@launch
             }
+
+            // ── REAL connectivity check before claiming "Connected".
+            // Xray starts fine even on dead configs (the TCP ping only proved
+            // the edge was reachable). Push a request THROUGH the tunnel and
+            // require proof of life — otherwise report an honest failure.
+            delay(600)
+            // A disconnect may have been requested during the probe window.
+            if (EngineState.state.value != EngineState.ConnState.CONNECTING) return@launch
+            if (!verifyTunnel()) {
+                fail("Server isn't responding — choose another one")
+                return@launch
+            }
+
             EngineState.set(EngineState.ConnState.CONNECTED)
             updateNotification()
 
@@ -112,6 +129,7 @@ class VpnEngineService : VpnService() {
                     TimeQuotaManager.syncWithServer(this@VpnEngineService, watchAd = false)
                 }
                 if (!TimeQuotaManager.tick(this@VpnEngineService)) {
+                    EngineState.setActiveConfig(null)
                     EngineState.set(EngineState.ConnState.QUOTA_EXHAUSTED, "Time is up")
                     stopEngine()
                     return@launch
@@ -119,6 +137,37 @@ class VpnEngineService : VpnService() {
                 updateNotification()
             }
         }
+    }
+
+    /**
+     * True when data demonstrably flows through the tunnel: either an HTTP
+     * probe succeeds (it routes through our TUN), or enough bytes moved to
+     * prove the pipe is alive. Never blocks longer than ~10 s.
+     */
+    private fun verifyTunnel(): Boolean {
+        val rx0 = android.net.TrafficStats.getTotalRxBytes()
+        val tx0 = android.net.TrafficStats.getTotalTxBytes()
+        var probeError: String? = null
+        val probed = runCatching {
+            val conn = java.net.URL("https://connectivitycheck.gstatic.com/generate_204")
+                .openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 6_000
+            conn.readTimeout = 4_000
+            conn.instanceFollowRedirects = false
+            try {
+                val code = conn.responseCode
+                android.util.Log.d("VpnVerify", "probe responseCode=$code")
+                code == 204 || code == 200
+            } finally {
+                conn.disconnect()
+            }
+        }.onFailure {
+            probeError = "${it.javaClass.simpleName}: ${it.message}"
+        }.getOrDefault(false)
+        val moved = (android.net.TrafficStats.getTotalRxBytes() - rx0) +
+            (android.net.TrafficStats.getTotalTxBytes() - tx0)
+        android.util.Log.d("VpnVerify", "probed=$probed err=$probeError movedBytes=$moved")
+        return probed || moved > 100_000
     }
 
     private fun invoke(method: String, xrayJson: String): String =
@@ -148,6 +197,7 @@ class VpnEngineService : VpnService() {
 
     private fun fail(message: String) {
         busy.set(false)
+        EngineState.setActiveConfig(null)
         EngineState.set(EngineState.ConnState.ERROR, message)
         cleanup()
         @Suppress("DEPRECATION") stopForeground(true)
@@ -158,8 +208,10 @@ class VpnEngineService : VpnService() {
         busy.set(false)
         scope.launch {
             runCatching { LibXray.invoke("""{"apiVersion":2,"method":"stopXray"}""") }
+            runCatching { LibXray.resetDNS() }
             tunPfd?.close()
             tunPfd = null
+            EngineState.setActiveConfig(null)
             EngineState.set(EngineState.ConnState.DISCONNECTED)
             @Suppress("DEPRECATION") stopForeground(true)
             stopSelf()
@@ -168,6 +220,7 @@ class VpnEngineService : VpnService() {
 
     private fun cleanup() {
         runCatching { LibXray.invoke("""{"apiVersion":2,"method":"stopXray"}""") }
+        runCatching { LibXray.resetDNS() }
         tunPfd?.close()
         tunPfd = null
     }
@@ -180,6 +233,7 @@ class VpnEngineService : VpnService() {
 
     override fun onRevoke() {
         busy.set(false)
+        EngineState.setActiveConfig(null)
         EngineState.set(EngineState.ConnState.DISCONNECTED, "VPN revoked")
         cleanup()
         super.onRevoke()
@@ -197,6 +251,11 @@ class VpnEngineService : VpnService() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        val disconnect = PendingIntent.getService(
+            this, 1,
+            Intent(this, VpnEngineService::class.java).setAction(ACTION_DISCONNECT),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         val remainingMin = TimeQuotaManager.remainingSeconds(this) / 60
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher)
@@ -204,6 +263,11 @@ class VpnEngineService : VpnService() {
             .setContentText("$remainingMin min remaining")
             .setOngoing(true)
             .setContentIntent(open)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "Disconnect ($remainingMin min left)",
+                disconnect,
+            )
             .build()
     }
 
@@ -247,10 +311,15 @@ class VpnEngineService : VpnService() {
             )
         }
 
-        /** Connect using the fastest pinged server from the cache. */
+        /** Connect to the user-selected server, else the fastest pinged one. */
         fun connectLastOrFastest(context: android.content.Context) {
-            val cached = com.chobgroup.rootnet.data.repository.ServerCacheStore.instance.cachedServers()
+            val cache = com.chobgroup.rootnet.data.repository.ServerCacheStore.instance
+            val cached = cache.cachedServers()
             val usable = cached.filter { it.pingMs == null || it.pingMs >= 0 }
+            cache.selectedServer()?.let { sel ->
+                connect(context, sel.rawConfig, sel.configFormat.name.lowercase(), sel.type.wireName)
+                return
+            }
             val best = usable.minByOrNull { it.pingMs ?: Int.MAX_VALUE } ?: usable.firstOrNull() ?: return
             connect(context, best.rawConfig, best.configFormat.name.lowercase(), best.type.wireName)
         }

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
  *    `408, 429, 500, 502, 503, 504` and IO errors — spec §7.0.
  *  - 15s call timeout (pass a smaller value for short-lived calls).
  *
- * Every API call in the app goes through this client (auth, servers, version,
+ * Every API call in the app goes through this client (servers, version,
  * push registration).
  */
 object PinnedHttpClient {
