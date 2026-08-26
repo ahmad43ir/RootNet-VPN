@@ -7,6 +7,10 @@
 object AppConstants {
     const val SUPABASE_URL = "https://bprkazfxqmanrybiexnh.supabase.co"
     const val SUPABASE_ANON_KEY = "sb_publishable_h2oEryaNO2GWDEYw-flm3A_EV9pP9Co"
+
+    /** VlessHub data plane — Cloudflare Worker on D1 (separated from RootNet). */
+    const val VLESSHUB_API_URL = "https://vlesshub-api.mobileahmad43-a18.workers.dev"
+
     const val API_URL = "$SUPABASE_URL/functions/v1/rootnet-api"
 
     const val UPDATE_URL = "https://chobgroup.pages.dev"

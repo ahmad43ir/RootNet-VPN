@@ -19,7 +19,7 @@ import java.net.URL
 object ProxyApi {
 
     private const val BASE_URL =
-        "https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/proxy-api"
+        "https://vlesshub-api.mobileahmad43-a18.workers.dev"
 
     private const val TIMEOUT_MS = 15_000
 

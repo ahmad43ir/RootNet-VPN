@@ -1,0 +1,24 @@
+name = "vlesshub-api"
+main = "src/index.js"
+compatibility_date = "2026-07-28"
+
+# ============================================================
+# VlessHub data plane — Cloudflare D1 (separated from RootNet's Supabase).
+#
+# Public (no auth):
+#   GET /servers              → PostgREST-shaped array for the Links tab
+#   GET /proxies              → { proxies, pool_size, working } (proxy-api shape)
+#   GET /files?limit=         → PostgREST-shaped array for the Files tab
+#   GET /files/:id/content    → [{ filename, content(base64) }] (bytea shape)
+#   GET /version              → app_config row
+#   GET /health
+#
+# Admin (X-Admin-Key header, used by the @Vless_hub_bot):
+#   servers / proxies / files CRUD, channels, last-scrape, config
+#   POST /ingest { links: [...], source } — scraper forwarding target
+# ============================================================
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vlesshub"
+database_id = "4aa0a8d3-7389-43aa-85f6-daab718362e0"

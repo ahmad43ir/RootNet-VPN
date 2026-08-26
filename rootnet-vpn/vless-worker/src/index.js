@@ -358,6 +358,23 @@ async function handleWebhook(request, env) {
       return json({ error: 'Supabase not configured' }, 500);
     }
 
+    // Forward valid links to the VlessHub D1 data plane (vlesshub-api).
+    // The VlessHub app + bot read exclusively from there now; the Supabase
+    // vless_links write below is legacy and no longer consumed by apps.
+    const validLinks = links.filter(isValidConfigLink);
+    if (validLinks.length > 0 && env.VLESSHUB_API_URL && env.VLESSHUB_API_KEY) {
+      try {
+        await fetch(`${env.VLESSHUB_API_URL}/ingest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': env.VLESSHUB_API_KEY },
+          body: JSON.stringify({ links: validLinks, source }),
+        });
+        console.log(`  ➜ Forwarded ${validLinks.length} link(s) to vlesshub-api (@${source})`);
+      } catch (e) {
+        console.error(`  ➜ vlesshub-api forward failed: ${e.message}`);
+      }
+    }
+
     // Process each link with dedup and validation
     let inserted = 0;
     let skipped = 0;

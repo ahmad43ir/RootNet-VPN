@@ -30,13 +30,9 @@ class RemoteVpnFileRepository {
     suspend fun fetchFiles(limit: Int = 50): List<VpnFile> = withContext(Dispatchers.IO) {
         try {
             val client = PinnedHttpClient.newClient()
-            val url = AppConstants.SUPABASE_URL + "/rest/v1/vpn_files" +
-                "?select=id,filename,size_bytes,uploaded_at,is_encrypted,config_count,source_channel" +
-                "&order=uploaded_at.desc&limit=$limit"
+            val url = AppConstants.VLESSHUB_API_URL + "/files?limit=$limit"
             val request = Request.Builder()
                 .url(url)
-                .header("apikey", AppConstants.SUPABASE_ANON_KEY)
-                .header("Authorization", "Bearer ${AppConstants.SUPABASE_ANON_KEY}")
                 .build()
 
             client.newCall(request).execute().use { response ->
@@ -78,12 +74,9 @@ class RemoteVpnFileRepository {
         withContext(Dispatchers.IO) {
             try {
                 val client = PinnedHttpClient.newClient()
-                val url = AppConstants.SUPABASE_URL + "/rest/v1/vpn_files" +
-                    "?select=filename,content&id=eq.${file.id}"
+                val url = AppConstants.VLESSHUB_API_URL + "/files/${file.id}/content"
                 val request = Request.Builder()
                     .url(url)
-                    .header("apikey", AppConstants.SUPABASE_ANON_KEY)
-                    .header("Authorization", "Bearer ${AppConstants.SUPABASE_ANON_KEY}")
                     .build()
 
                 client.newCall(request).execute().use { response ->

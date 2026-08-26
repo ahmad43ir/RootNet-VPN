@@ -27,12 +27,9 @@ class RemoteServerRepository : ServerRepository {
     override suspend fun fetchServers(): List<VpnServer> = withContext(Dispatchers.IO) {
         try {
             val client = PinnedHttpClient.newClient()
-            val url = AppConstants.SUPABASE_URL + "/rest/v1/servers" +
-                "?select=name,flag,country,config,type,config_format,source_channel,created_at&is_active=eq.true"
+            val url = AppConstants.VLESSHUB_API_URL + "/servers"
             val request = Request.Builder()
                 .url(url)
-                .header("apikey", AppConstants.SUPABASE_ANON_KEY)
-                .header("Authorization", "Bearer ${AppConstants.SUPABASE_ANON_KEY}")
                 .build()
 
             client.newCall(request).execute().use { response ->
