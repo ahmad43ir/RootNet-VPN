@@ -24,10 +24,10 @@
 > | # | Component | Path | What it does |
 > |---|-----------|------|--------------|
 > | 1 | **RootNet app** | `lib/` (+ `android/`, `ios/`, ...) | Flutter VPN client (VLESS/V2Ray) |
-> | 5 | **VLESS Ingestion API** | `vless-worker/` | Cloudflare Worker — receives scraped links, stores in Supabase `vless_links` |
-> | 6 | **VLESS Telegram Scraper** | `vless-scraper/` | Python (Telethon) bot — watches Telegram channels, extracts VLESS links |
+> | 5 | **VLESS Ingestion API** | `rootnet-vpn/vless-worker/` | Cloudflare Worker — receives scraped links, stores in Supabase `vless_links` |
+> | 6 | **VLESS Telegram Scraper** | `vlesshub/vless-scraper/` | Python (Telethon) bot — watches Telegram channels, extracts VLESS links |
 >
-> **Pipeline:** Telegram channels → scraper (`vless-scraper/`) → ingestion worker (`vless-worker/`) → Supabase `vless_links` → import endpoint (`rootnet-api` `/import-vless`) → `servers` table → RootNet app.
+> **Pipeline:** Telegram channels → scraper (`vlesshub/vless-scraper/`) → ingestion worker (`rootnet-vpn/vless-worker/`) → Supabase `vless_links` → import endpoint (`rootnet-api` `/import-vless`) → `servers` table → RootNet app.
 >
 > Last updated: August 5, 2026
 
@@ -66,8 +66,8 @@
 - [x] DB schema + RLS + seed data (servers, app_config, device_tokens, vless_links)
 
 ### Pipeline (scraper + worker)
-- [x] `vless-scraper/` — event-driven Telethon listener, webhook + direct-Supabase fallback, FloodWait handling, auto-cleanup (36h)
-- [x] `vless-worker/` — webhook ingestion, dedup, validation, cleanup endpoint
+- [x] `vlesshub/vless-scraper/` — event-driven Telethon listener, webhook + direct-Supabase fallback, FloodWait handling, auto-cleanup (36h)
+- [x] `rootnet-vpn/vless-worker/` — webhook ingestion, dedup, validation, cleanup endpoint
 - [x] `vless_links` table + helper functions (age, cleanup, active links)
 - [x] **Pipeline integration** — `rootnet-api` `POST /import-vless` promotes scraped links into the `servers` table (admin key, idempotent)
 - [x] **Auto-import scheduler** — pg_cron job `import-vless-every-30min` runs `import_pending_vless_links()` automatically every 30 min (migration `20260803000002`); the `/import-vless` endpoint now calls the same DB RPC
@@ -121,9 +121,9 @@
 | FCM server push | ✅ `FCM_SERVICE_ACCOUNT` secret set (key saved to `credentials/firebase-adminsdk.json`, gitignored) | Edge Function secret |
 | Play Store release | Play Console account, keystore (`upload-keystore.jks` exists) | Play Console |
 | APK hosting | ✅ Done — GitHub Releases (v1.1.2 `app-release.apk`) | `pages-site/rootnet.html` |
-| Telegram session | API_ID / API_HASH / StringSession (member of target channels) — add as **GitHub Actions repo secrets** when ready | `vless-scraper/.env` + repo secrets |
-| Worker webhook URL | ✅ `vless-worker` deployed — `WEBHOOK_URL` + `WEBHOOK_API_KEY` already in `vless-scraper/.env` | scraper `.env` |
-| Scraper hosting | ✅ Free GitHub Actions cron — `.github/workflows/scrape.yml` ready; just push the repo + add 8 secrets (see `vless-scraper/README.md`) | `vless-scraper/` |
+| Telegram session | API_ID / API_HASH / StringSession (member of target channels) — add as **GitHub Actions repo secrets** when ready | `vlesshub/vless-scraper/.env` + repo secrets |
+| Worker webhook URL | ✅ `vless-worker` deployed — `WEBHOOK_URL` + `WEBHOOK_API_KEY` already in `vlesshub/vless-scraper/.env` | scraper `.env` |
+| Scraper hosting | ✅ Free GitHub Actions cron — `.github/workflows/scrape.yml` ready; just push the repo + add 8 secrets (see `vlesshub/vless-scraper/README.md`) | `vlesshub/vless-scraper/` |
 
 ---
 

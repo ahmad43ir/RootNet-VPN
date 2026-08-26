@@ -32,11 +32,11 @@ built-in tunnel — RootNet never sees your traffic.
 
 ## Auth email templates (branded)
 
-RootNet's Supabase auth emails (confirm signup, password reset, magic link, invite, email change, and the 7 security notifications) use custom HTML templates in `supabase/templates/`, styled to match the app's dark cyber-organic theme (deep forest `#0B1A12`, neon green `#4CFF88`).
+RootNet's Supabase auth emails (confirm signup, password reset, magic link, invite, email change, and the 7 security notifications) use custom HTML templates in `rootnet-vpn/supabase/templates/`, styled to match the app's dark cyber-organic theme (deep forest `#0B1A12`, neon green `#4CFF88`).
 
-- **Edit a template** → change the HTML in `supabase/templates/<name>.html`, then **apply it to the hosted project** with `node supabase/scripts/apply-email-templates.mjs`. The script reads credentials from `.env` (git-ignored) and pushes via the Supabase Management API (`mailer_templates_*` / `mailer_subjects_*` fields).
-- **Sender address** → configured as a **Resend custom SMTP** (`smtp.resend.com:465`) via `node supabase/scripts/configure-smtp.mjs`. Custom SMTP is required: Supabase's free tier blocks template editing when using its built-in email service.
-- **Local dev** → the same templates are wired into `supabase/config.toml` under `[auth.email.template.*]` and `[auth.email.notification.*]`. Restart with `supabase stop && supabase start` after editing.
+- **Edit a template** → change the HTML in `rootnet-vpn/supabase/templates/<name>.html`, then **apply it to the hosted project** with `node rootnet-vpn/supabase/scripts/apply-email-templates.mjs`. The script reads credentials from `.env` (git-ignored) and pushes via the Supabase Management API (`mailer_templates_*` / `mailer_subjects_*` fields).
+- **Sender address** → configured as a **Resend custom SMTP** (`smtp.resend.com:465`) via `node rootnet-vpn/supabase/scripts/configure-smtp.mjs`. Custom SMTP is required: Supabase's free tier blocks template editing when using its built-in email service.
+- **Local dev** → the same templates are wired into `rootnet-vpn/supabase/config.toml` under `[auth.email.template.*]` and `[auth.email.notification.*]`. Restart with `supabase stop && supabase start` after editing.
 - **⚠️ Test mode** → `RESEND_SENDER_EMAIL=onboarding@resend.dev` only delivers to the Resend account owner's inbox. Before real users rely on these emails, verify a sending domain at resend.com/domains, set `RESEND_SENDER_EMAIL=no-reply@<your-domain>` in `.env`, and re-run `configure-smtp.mjs` + `apply-email-templates.mjs`.
 - **Secrets** → `SUPABASE_ACCESS_TOKEN` and `RESEND_API_KEY` are stored in `.env` and `agent_only.txt` (both git-ignored). Revoke the Supabase PAT after use — it has full account access.
 
@@ -71,15 +71,15 @@ Android App (config launcher)  →  Supabase public REST (servers)  →  Supabas
 
 | Component | Path | Role |
 |-----------|------|------|
-| **RootNet app** | `android-app/` | Native Android config launcher (Kotlin + Compose) |
-| **Ingestion Worker** | `vless-worker/` | Cloudflare Worker — receives scraped links, stores in Supabase |
-| **Telegram Scraper** | `vless-scraper/` | Python (Telethon) — watches channels, extracts VLESS links |
+| **RootNet app** | `rootnet-vpn/android-app/` | Native Android config launcher (Kotlin + Compose) |
+| **Ingestion Worker** | `rootnet-vpn/vless-worker/` | Cloudflare Worker — receives scraped links, stores in Supabase |
+| **Telegram Scraper** | `vlesshub/vless-scraper/` | Python (Telethon) — watches channels, extracts VLESS links |
 
 ### End-to-end server pipeline
 
 ```
 Telegram channels
-   ↓  (vless-scraper/main.py — Telethon listener)
+   ↓  (vlesshub/vless-scraper/main.py — Telethon listener)
 Cloudflare Worker  (vless-worker — POST /webhook)
    ↓
 Supabase vless_links  (dedup, 36h auto-cleanup)

@@ -18,7 +18,7 @@ tunnels, or routes traffic. No accounts, no premium, no JWT.
 
 ## Architecture Components
 
-### 1. Android App (`android-app/`)
+### 1. Android App (`rootnet-vpn/android-app/`)
 - **Config launcher**: `ServerListScreen` — cache-first server list, live TCP ping, per-row **Copy** + **Export** (combined Adivery interstitial on every 3rd tap, 60s cooldown) + **Refresh** (Adivery rewarded video gate)
 - **UI**: Compose screens — `MainShellScreen` (2 tabs: Servers/Settings), `ServerListScreen`, `SettingsScreen`, `UpdateRequiredScreen`
 - **Ads**: `AdiveryAdsManager` — interstitial/rewarded/banner, `image_rootnet` / `video_rootnet` / `banner_rootnet`. v2.3 lock rule: required ad unavailable → blur lock gate until a rewarded video is watched to the end
@@ -26,20 +26,20 @@ tunnels, or routes traffic. No accounts, no premium, no JWT.
 - **Config**: `ConfigNormalizer` — parsers ONLY (used for ping); Xray JSON builders deleted
 - **No engine, no auth**: `domain/` + `vpn/` packages, `AuthRepository`, `SecurePrefs`, `SessionTimer`, FCM push, root detection — all deleted. Do NOT re-add
 
-### 2. Supabase Edge Functions (`supabase/functions/`)
+### 2. Supabase Edge Functions (`rootnet-vpn/supabase/functions/`)
 | Function | Purpose |
 |----------|---------|
 | `rootnet-api` | Version gate (`app_config`), `/import-vless` (admin), legacy JWT routes (unused by the app) |
 | `geo-api` | GeoIP lookup with 24h caching |
 | `telegram-bot` | Webhook bot: `/scrape`, `/addproxy`, `/listproxy`, `/addchannel`, server CRUD, VPN files |
 
-### 3. Cloudflare Workers (`vless-worker/`, `pages-site/`)
+### 3. Cloudflare Workers (`rootnet-vpn/vless-worker/`, `pages-site/`)
 | Worker | Purpose |
 |--------|---------|
 | `vless-worker` | Ingestion webhook: `POST /webhook`, `/webhook/batch`, `/cleanup`, `/health` — stores `scraped_at` as `created_at` |
 | `pages-site` | Static landing page (`rootnet-proxy`) |
 
-### 4. Python Scraper (`vless-scraper/`)
+### 4. Python Scraper (`vlesshub/vless-scraper/`)
 - **Files**: `main.py`, `proxy_pool.py`, `cleanup_chats.py`
 - **Pipeline**: Telegram channels → Telethon → extract VLESS/NPV/SIP → POST to vless-worker (with `scraped_at` = Telegram message date) → Supabase `vless_links` → pg_cron `import_pending_vless_links()` → `servers` (created_at preserved)
 - **Proxy Pool**: MTProto proxies from `PROXY_CHANNELS`, tested (cap ≤15/run, concurrency ≤4), stored in `scraper_proxies`, rotated on failure
@@ -53,7 +53,7 @@ Key tables: `servers` (configs + `created_at` scrape time), `vless_links`, `vpn_
 ## Review Areas — Check Each Thoroughly
 
 ### A. Security & Privacy
-1. **No secrets in client** — Verify `AppConstants.kt` has only the public URL + anon key + Adivery placement IDs; no keys in `android-app/.env` / `agent_only.txt` leak into tracked files
+1. **No secrets in client** — Verify `AppConstants.kt` has only the public URL + anon key + Adivery placement IDs; no keys in `rootnet-vpn/android-app/.env` / `agent_only.txt` leak into tracked files
 2. **Cert pinning** — `PinnedHttpClient.kt`: pins enforced? Backup pins? Cert rotation handled?
 3. **RLS policies** — `servers` anon SELECT = `is_active=true` (no premium filter); `app_config` public; `vless_links`/`vpn_files` service_role only
 4. **Anti-replay** — `PinnedHttpClient` adds `X-Request-ID` + timestamp; server validates?
@@ -89,7 +89,7 @@ Key tables: `servers` (configs + `created_at` scrape time), `vless_links`, `vpn_
 6. **Chat state** — `pendingScrapeConfirm` cleared on confirm/cancel/timeout?
 
 ### E. Database & Migrations
-1. **Migrations order** — Check `supabase/migrations/` sequence; no destructive changes without backup
+1. **Migrations order** — Check `rootnet-vpn/supabase/migrations/` sequence; no destructive changes without backup
 2. **Indexes** — `scraper_proxies_active_idx (is_active, last_ok)`, `servers` queries covered
 3. **Triggers/cron** — `import_pending_vless_links` pg_cron every 30min; grants = service_role only (REVOKEd from PUBLIC/anon/authenticated)
 4. **Config formats** — `servers.config_format` accepts `link|json|npv|conf|sip`; `type` mapped
@@ -105,7 +105,7 @@ Key tables: `servers` (configs + `created_at` scrape time), `vless_links`, `vpn_
 ### G. Build & Deploy
 1. **Gradle** — `android-app`: AGP/Kotlin versions current? `compileDebugKotlin` passes? APK stays ~1.8 MB (no jniLibs, no material-icons-extended)?
 2. **Python** — `vless-scraper`: `main.py`/`proxy_pool.py` syntax OK? `requirements.txt` pinned?
-3. **Node** — `vless-worker/src/index.js` syntax OK? `wrangler.toml` bindings correct?
+3. **Node** — `rootnet-vpn/vless-worker/src/index.js` syntax OK? `wrangler.toml` bindings correct?
 4. **GitHub Actions** — `scrape.yml`: `concurrency` group, `timeout-minutes: 10`, sane message limits
 5. **Secrets** — All required secrets documented (API_ID, API_HASH, TELEGRAM_SESSION, CHANNELS, PROXY_CHANNELS, WEBHOOK_URL, WEBHOOK_API_KEY, SUPABASE_URL, SUPABASE_KEY, BOT_TOKEN, GH_PAT, ADMIN_KEY, ADMIN_IDS); none hardcoded in tracked files
 
@@ -163,14 +163,14 @@ Severity: 🔴 Critical (ban/data loss/security) | 🟠 High (functional break) 
 ---
 
 ## Files to Prioritize (High Impact)
-1. `android-app/app/src/main/java/com/chobgroup/rootnet/data/ads/AdiveryAdsManager.kt`
-2. `android-app/app/src/main/java/com/chobgroup/rootnet/data/remote/PinnedHttpClient.kt`
-3. `android-app/app/src/main/java/com/chobgroup/rootnet/ui/screens/ServerListScreen.kt`
-4. `supabase/functions/rootnet-api/index.ts` + `_rate-limit.ts`
-5. `supabase/functions/telegram-bot/_handlers.ts` + `_db.ts` + `_parser.ts`
-6. `vless-worker/src/index.js`
-7. `vless-scraper/main.py` + `proxy_pool.py`
-8. `supabase/migrations/20260813000002_propagate_scraped_at_to_servers.sql`
+1. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/data/ads/AdiveryAdsManager.kt`
+2. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/data/remote/PinnedHttpClient.kt`
+3. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/ui/screens/ServerListScreen.kt`
+4. `rootnet-vpn/supabase/functions/rootnet-api/index.ts` + `_rate-limit.ts`
+5. `rootnet-vpn/supabase/functions/telegram-bot/_handlers.ts` + `_db.ts` + `_parser.ts`
+6. `rootnet-vpn/vless-worker/src/index.js`
+7. `vlesshub/vless-scraper/main.py` + `proxy_pool.py`
+8. `rootnet-vpn/supabase/migrations/20260813000002_propagate_scraped_at_to_servers.sql`
 9. `.github/workflows/scrape.yml`
 10. `AGENTS.md` (as compliance checklist)
 

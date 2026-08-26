@@ -5,7 +5,7 @@
 > v2.2: **Adivery is the only ad network** (App ID `73697db8-c7dc-4af2-9f3c-dd422942cf57`,
 > placements image_rootnet / video_rootnet / banner_rootnet). AdMob + Unity Ads removed.
 >
-> **Target stack:** ✅ Kotlin/Jetpack Compose — project at `android-app/` (app id `com.chobgroup.rootnet`)
+> **Target stack:** ✅ Kotlin/Jetpack Compose — project at `rootnet-vpn/android-app/` (app id `com.chobgroup.rootnet`)
 > **Status legend:** `[ ]` todo · `[x]` done · `[~]` in progress
 
 ---

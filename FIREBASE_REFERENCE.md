@@ -6,7 +6,7 @@
 > 🚀 **v2.2 (2026-08-13):** RootNet is a **config launcher** — **FCM push, Auth, and the
 > Flutter app are gone**. Firebase is now **Crashlytics only** (release builds). Everything
 > below describing auth, FCM push delivery, `firebase-messaging`, or the Flutter SDK is
-> **retired** — do not re-add. Live truth: `android-app/` + `app_clone.md` §0.
+> **retired** — do not re-add. Live truth: `rootnet-vpn/android-app/` + `app_clone.md` §0.
 
 ---
 

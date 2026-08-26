@@ -59,7 +59,7 @@ Status as of 2026-08-06 (Phase 11 checklist item "Landing page + download link +
   `https://github.com/ahmad43ir/rootnet/releases/latest/download/app-release.apk`, but the repo is
   **private** and **no release exists** → 404 for every visitor. Page metadata is also stale
   ("v1.1.2 · 84.8 MB" — the signed clone APK is actually **204.3 MB**).
-- Signed release APK: `android-app/app/build/outputs/apk/release/app-release.apk`
+- Signed release APK: `rootnet-vpn/android-app/app/build/outputs/apk/release/app-release.apk`
   (versionName 1.1.2, versionCode 100, RSA-signed, v1+v2, SHA-256
   `90154a59c25af318bd736e92d7d45491062e760e5f3e602cfacb11c24f13c2c4`).
 
@@ -83,7 +83,7 @@ Status as of 2026-08-06 (Phase 11 checklist item "Landing page + download link +
 
 ### Steps to finish the item (next session, after R2 is enabled)
 1. Create bucket + upload:
-   `npx wrangler r2 object put rootnet-apk/app-release.apk --file android-app/app/build/outputs/apk/release/app-release.apk`
+   `npx wrangler r2 object put rootnet-apk/app-release.apk --file rootnet-vpn/android-app/app/build/outputs/apk/release/app-release.apk`
    (bucket name suggestion `rootnet-apk`; if the S3 API route is used instead, endpoint is
    `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`, account id `a18dd8c6e49dd4541a88a539ad482bf6`).
 2. Make the bucket public (dashboard: R2 → bucket → Settings → Public access, or `r2.dev` dev URL).

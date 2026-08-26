@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- App-private download cache (files/downloads). -->
+    <files-path name="downloads" path="downloads/" />
+    <!-- Legacy public Downloads dir (Android 9 and older absolute paths). -->
+    <external-path name="external_downloads" path="Download/" />
+</paths>

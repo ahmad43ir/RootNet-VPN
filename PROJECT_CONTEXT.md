@@ -12,7 +12,7 @@
 > ad network** (App ID `73697db8-c7dc-4af2-9f3c-dd422942cf57`).
 >
 > ⚠️ Much of this document still describes the **retired Flutter VPN app**. For current truth
-> use **`app_clone.md` §0 (v2.0 supersession)** and the code in `android-app/`.
+> use **`app_clone.md` §0 (v2.0 supersession)** and the code in `rootnet-vpn/android-app/`.
 
 ## 1. Project Overview
 
@@ -74,7 +74,7 @@
 
 ---
 
-## 3. Supabase Edge Functions API (`supabase/functions/`)
+## 3. Supabase Edge Functions API (`rootnet-vpn/supabase/functions/`)
 
 Replaces the deprecated Cloudflare Workers. All backend logic runs as Supabase Edge Functions (Deno).
 
@@ -383,7 +383,7 @@ To unblock: set `minimum_version` back to `'1.0.0'`.
 
 ---
 
-## 10. GeoIP Edge Function (`supabase/functions/geo-api/`)
+## 10. GeoIP Edge Function (`rootnet-vpn/supabase/functions/geo-api/`)
 
 A production-grade Supabase Edge Function for IP geolocation with:
 - **Supabase as primary** provider (fast, internal)
@@ -496,13 +496,13 @@ rootnet/
 │   ├── geoip.html                 # GeoIP API docs + interactive lookup tool
 │   ├── privacy.html               # Privacy policy
 │   └── chob.html                  # (deprecated — renamed to index.html)
-├── vless-worker/                   # Cloudflare ingestion worker (webhook → Supabase vless_links)
+├── rootnet-vpn/vless-worker/                   # Cloudflare ingestion worker (webhook → Supabase vless_links)
 │   ├── wrangler.toml
 │   └── src/index.js
-├── vless-scraper/                  # Telegram scraper (Python/Telethon → webhook to vless-worker)
+├── vlesshub/vless-scraper/                  # Telegram scraper (Python/Telethon → webhook to vless-worker)
 │   ├── main.py
 │   └── README.md
-├── android-app/                   # v2.x native Kotlin/Compose app (NOT Flutter)
+├── rootnet-vpn/android-app/                   # v2.x native Kotlin/Compose app (NOT Flutter)
 │   ├── app/
 │   │   ├── build.gradle.kts       # minSdk 23, Adivery + Crashlytics, R8
 │   │   └── proguard-rules.pro     # R8 rules (WorkManager + Adivery keeps)
@@ -638,7 +638,7 @@ GET /health ───────── no auth ──→ Return {status: "ok"}
 
 ## 17. Supabase Migration & Seed Files
 
-### `supabase/migrations/20260721000001_create_servers_table.sql`
+### `rootnet-vpn/supabase/migrations/20260721000001_create_servers_table.sql`
 
 Creates the `servers` table with:
 - Columns: `id`, `name`, `flag`, `country`, `config`, `host`, `port`, `is_active`, `premium_only`, `created_at`

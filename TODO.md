@@ -125,7 +125,7 @@ network** (AdMob + Unity Ads removed in v2.2).
 | Auto-import — pg_cron `import-vless-every-30min` + shared RPC `import_pending_vless_links` (migration `20260803000002`) | ✅ Done |
 | Deployed to production — rootnet-api Edge Function, all 12 migrations (db push), vless-ingestion-api worker + secrets, ADMIN_KEY secret | ✅ Done |
 | `FCM_SERVICE_ACCOUNT` secret set (service account key in `credentials/firebase-adminsdk.json`) — push verified end-to-end | ✅ Done |
-| `vless-worker/` moved into `RootNet/` (app + worker + scraper unified) | ✅ Done |
+| `rootnet-vpn/vless-worker/` moved into `RootNet/` (app + worker + scraper unified) | ✅ Done |
 | `ROADMAP.md` created for the combined project | ✅ Done |
 | **First release APK (v1.1.2)** — signed 84.8 MB `app-release.apk` (Gradle mirror fix for 403-blocked storage.googleapis.com) | ✅ Done |
 | **GitHub Release v1.1.2** — created, APK attached (`app-release.apk`) | ✅ Done |

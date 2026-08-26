@@ -9,8 +9,10 @@
 
 ## 📦 PROJECT SCOPE — ROOTNET ONLY
 
-This repo is **RootNet only** (VPN config launcher, Supabase project `bprkazfxqmanrybiexnh`).
-ProxyBox (`proxybox-app/`) stays in this repo but is its own app with its own secrets.
+This repo is **RootNet only** (VPN app with Xray engine + ad-quota, Supabase project
+`bprkazfxqmanrybiexnh`). **VlessHub** (`vlesshub/vlesshub-app/`, ex-ProxyBox — Links/MTProto/Files
+config hub) stays in this repo but is its own app with its own secrets. See
+`BPB_VLESS_PLAN.md` for the BPB 10-services architecture.
 
 ---
 
@@ -26,7 +28,7 @@ Warn before:
   account*, not a bot — messages sent from it count against the account's flood limits).
 - **Logging in / logging out / re-signing-in / re-creating the session** (`sign_in`, new
   `TELEGRAM_SESSION`, deleting the StringSession). Login is the #1 way to get a user account
-  flagged. The session string in `vless-scraper/.env` is precious — never regenerate casually.
+  flagged. The session string in `vlesshub/vless-scraper/.env` is precious — never regenerate casually.
 - **Bursty anonymous connections**: proxy-pool testing creates throwaway MTProto auth keys.
   Caps (below) are mandatory.
 - **Heavy scans**: fetching more than ~30 messages per channel, iterating the whole dialogs list,

@@ -15,13 +15,13 @@ Both apps share:
 
 ## Architecture Components
 
-### 1. Android Apps (`android-app/`, `proxybox-app/`)
+### 1. Android Apps (`rootnet-vpn/android-app/`, `proxybox-app/`)
 | App | Purpose | Key Files |
 |-----|---------|-----------|
-| **RootNet** | Config launcher (Copy/Export VLESS/V2Ray configs, Adivery ads) | `android-app/app/src/main/java/com/chobgroup/rootnet/` |
+| **RootNet** | Config launcher (Copy/Export VLESS/V2Ray configs, Adivery ads) | `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/` |
 | **ProxyBox** | Free MTProto proxy list (10 random per batch) | `proxybox-app/app/src/main/java/com/chobgroup/proxybox/` |
 
-### 2. Supabase Edge Functions (`supabase/functions/`)
+### 2. Supabase Edge Functions (`rootnet-vpn/supabase/functions/`)
 | Function | Purpose |
 |----------|---------|
 | `rootnet-api` | Main API: `/servers`, `/version`, `/free-connection`, `/import-vless` |
@@ -29,18 +29,18 @@ Both apps share:
 | `telegram-bot` | Webhook bot: `/scrape`, `/addproxy`, server CRUD |
 | `proxy-api` | Public GET `/proxies` — 10 random MTProto proxies for ProxyBox |
 
-### 3. Cloudflare Workers (`vless-worker/`, `pages-site/`)
+### 3. Cloudflare Workers (`rootnet-vpn/vless-worker/`, `pages-site/`)
 | Worker | Purpose |
 |--------|---------|
 | `vless-worker` | Ingestion webhook: `POST /webhook`, `/webhook/batch`, `/cleanup` |
 | `pages-site` | Static landing page (`rootnet-proxy`) |
 
-### 4. Python Scraper (`vless-scraper/`)
+### 4. Python Scraper (`vlesshub/vless-scraper/`)
 - `main.py` — Telethon listener, extracts VLESS/NPV/SIP configs, POSTs to vless-worker
 - `proxy_pool.py` — MTProto proxy pool: collect from channels, test (cap 3/run), rotate
 - `cleanup_chats.py` — Utility to delete placeholder chats
 
-### 5. Database (`supabase/migrations/`)
+### 5. Database (`rootnet-vpn/supabase/migrations/`)
 Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_config`, `device_tokens`, `free_connection_quota`, `rate_limits`, `bot_chat_state`, `request_ids`
 
 ---
@@ -89,7 +89,7 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 6. **Chat state** — `pendingScrapeConfirm` cleared on confirm/cancel/timeout?
 
 ### F. Database & Migrations
-1. **Migrations order** — Check `supabase/migrations/` sequence; no destructive changes without backup?
+1. **Migrations order** — Check `rootnet-vpn/supabase/migrations/` sequence; no destructive changes without backup?
 2. **Indexes** — `scraper_proxies_active_idx (is_active, last_ok)`, `servers` queries covered?
 3. **Triggers/cron** — `import_pending_vless_links` pg_cron every 30min (propagates `created_at`; no premium flag); `claim_free_connection` RPC is dormant v1 — don't re-enable
 4. **Config formats** — `servers.config_format` accepts `link|json|npv|conf|raw|sip` (migration 20260810000001)?
@@ -107,7 +107,7 @@ Key tables: `servers`, `vless_links`, `scraper_proxies`, `scraper_config`, `app_
 ### H. Build & Deploy
 1. **Gradle** — Both apps: AGP/Kotlin versions current? `compileDebugKotlin` passes?
 2. **Python** — `vless-scraper`: `main.py`/`proxy_pool.py` syntax OK? `requirements.txt` pinned?
-3. **Node** — `vless-worker/src/index.js` syntax OK? `wrangler.toml` bindings correct?
+3. **Node** — `rootnet-vpn/vless-worker/src/index.js` syntax OK? `wrangler.toml` bindings correct?
 4. **GitHub Actions** — `scrape.yml`: `concurrency` group, `timeout-minutes: 10`, `RUN_ONCE_MAX_MESSAGES=3`?
 5. **Secrets** — All required secrets documented (API_ID, API_HASH, TELEGRAM_SESSION, CHANNELS, PROXY_CHANNELS, WEBHOOK_URL, WEBHOOK_API_KEY, SUPABASE_URL, SUPABASE_KEY, BOT_TOKEN, GH_PAT, ADMIN_KEY, ADMIN_IDS)?
 
@@ -165,15 +165,15 @@ Severity: 🔴 Critical (ban/data loss/security) | 🟠 High (functional break) 
 ---
 
 ## Files to Prioritize (High Impact)
-1. `android-app/app/src/main/java/com/chobgroup/rootnet/data/ads/AdiveryAdsManager.kt`
-2. `android-app/app/src/main/java/com/chobgroup/rootnet/data/remote/PinnedHttpClient.kt`
-3. `android-app/app/src/main/java/com/chobgroup/rootnet/ui/screens/ServerListScreen.kt`
-4. `supabase/functions/rootnet-api/index.ts` + `_auth.ts` + `_rate-limit.ts`
-5. `supabase/functions/proxy-api/index.ts`
-6. `supabase/functions/telegram-bot/_handlers.ts` + `_db.ts` + `_parser.ts` + `_state.ts`
-7. `vless-worker/src/index.js`
-8. `vless-scraper/main.py` + `proxy_pool.py`
-9. `supabase/migrations/20260803000002_add_vless_import_rpc_and_cron.sql`
+1. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/data/ads/AdiveryAdsManager.kt`
+2. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/data/remote/PinnedHttpClient.kt`
+3. `rootnet-vpn/android-app/app/src/main/java/com/chobgroup/rootnet/ui/screens/ServerListScreen.kt`
+4. `rootnet-vpn/supabase/functions/rootnet-api/index.ts` + `_auth.ts` + `_rate-limit.ts`
+5. `rootnet-vpn/supabase/functions/proxy-api/index.ts`
+6. `rootnet-vpn/supabase/functions/telegram-bot/_handlers.ts` + `_db.ts` + `_parser.ts` + `_state.ts`
+7. `rootnet-vpn/vless-worker/src/index.js`
+8. `vlesshub/vless-scraper/main.py` + `proxy_pool.py`
+9. `rootnet-vpn/supabase/migrations/20260803000002_add_vless_import_rpc_and_cron.sql`
 10. `.github/workflows/scrape.yml`
 11. `proxybox-app/app/src/main/java/com/chobgroup/proxybox/data/ProxyApi.kt`
 12. `proxybox-app/app/src/main/java/com/chobgroup/proxybox/ui/HomeScreen.kt`

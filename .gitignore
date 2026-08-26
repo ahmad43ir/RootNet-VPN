@@ -52,6 +52,7 @@ migrate_working_dir/
 # database URLs, and other secrets.
 .env
 .env.*
+!.env.example
 .envrc
 *.env
 *.env.local
@@ -85,18 +86,15 @@ migrate_working_dir/
 # ──────────────────────────────────────────────
 # 🔐 Android Release Signing — NEVER COMMIT THESE
 # ──────────────────────────────────────────────
-# The keystore file and key.properties contain private keys
+# The keystore files and keystore.properties contain private keys
 # and passwords for signing your app release builds.
 # Anyone with these files can sign apps as YOU.
 # Store the keystore file securely (password manager, encrypted backup).
-/android/app/upload-keystore.jks
-/android/key.properties
-/android/local.properties
-
-# Android Studio build artifacts
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Matches both android-app/ and proxybox-app/ layouts (nested
+# .gitignore files also cover these, this is belt-and-braces).
+**/keystore.properties
+**/keystore/
+**/local.properties
 
 
 # ──────────────────────────────────────────────
@@ -135,6 +133,7 @@ migrate_working_dir/
 # ──────────────────────────────────────────────
 # Supabase temp files contain project ref, pooler URL, etc.
 supabase/.temp*
+**/supabase/.temp*
 supabase/.temp_migration_backup.sql
 
 

@@ -74,10 +74,10 @@ VALUES (
 
 ### Via Migration File (for version control)
 
-Create a new migration in `supabase/migrations/`:
+Create a new migration in `rootnet-vpn/supabase/migrations/`:
 
 ```sql
--- supabase/migrations/YYYYMMDDHHMMSS_description.sql
+-- rootnet-vpn/supabase/migrations/YYYYMMDDHHMMSS_description.sql
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.servers WHERE name = 'ServerName') THEN
