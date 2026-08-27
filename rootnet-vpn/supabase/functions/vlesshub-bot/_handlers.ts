@@ -59,7 +59,6 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 export const MENU_BTN_SERVERS = '🟢 Servers';
 export const MENU_BTN_FILES = '📁 VPN Files';
-export const MENU_BTN_WEB = '🔗 Web pages';
 export const MENU_BTN_SCRAPER = '🤖 Scraper';
 export const MENU_BTN_VERSION = '📱 Version';
 export const MENU_BTN_HELP = '❓ Help';
@@ -75,13 +74,13 @@ const VERSION_TEXT =
   '`/forceupdate on|off` toggle force';
 
 const MENU_TEXT =
-  'VlessHub � official config publishing channel: @Vless_hub_bot.\n\n' +
+  'VlessHub � official config publishing channel: @Vless_hub_bot.\n\n' +
   'New VPN configs (VLESS · VMess · Trojan · SS · Hysteria2 · WireGuard · SOCKS) are published here and flow straight into the app.\n\n' +
   '📤 Upload — import configs as servers\n' +
   '🟢 Servers — list & delete servers\n' +
   '📁 VPN Files — browse & download raw config files (.npvt, .sip, .npv, .json, etc.)\n' +
   '🤖 Scraper — run the config scraper / manage proxies & channels\n' +
-  '🔗 Web pages — quick links\n' +
+  
   '❓ Help — how it works & what each option does';
 
 // Telegram /command menu (registered via setMyCommands so they show up
@@ -129,7 +128,7 @@ const HELP_TEXT =
   'Open the list, tap servers to select them, then hit *Delete selected* — or *Delete all*. Deletion always asks for confirmation.\n\n' +
   '📁 *VPN Files*\n' +
   'Browse and download raw config files uploaded by the scraper or manually. Useful for encrypted files (.npvt, .npv) that the bot can\'t parse automatically. Tap a file to download it.\n\n' +
-  '🔗 *Web pages*\n' +
+  
   'Shortcut buttons to the landing page, APIs, and the Supabase dashboard.\n\n' +
   '🏷 *Server names*\n' +
   'Links taken from a channel keep that channel\'s name and are numbered in upload order — e.g. `@mychannel 1`, `@mychannel 2`. ' +
@@ -147,12 +146,7 @@ const HELP_TEXT =
   '`/addchannel`, `/delchannel`, `/listchannel` manage which channels it listens to.\n\n' +
   '*Commands*: /start menu · /stats server count · /backfillflags fix flags · /scrape run scraper · /myid your Telegram ID · /version version config';
 
-const WEB_LINKS: [string, string][] = [
-  ['Landing page (proxy)', 'https://rootnet-proxy.mobileahmad43-a18.workers.dev'],
-  ['Worker API', 'https://rootnet-api.mobileahmad43-a18.workers.dev'],
-  ['Ingestion API (health)', 'https://vless-ingestion-api.mobileahmad43-a18.workers.dev/health'],
-  ['Supabase dashboard', 'https://app.supabase.com/project/bprkazfxqmanrybiexnh'],
-];
+
 
 export interface BotContext {
   token: string;
@@ -168,7 +162,7 @@ function mainKeyboard(): unknown {
     keyboard: [
       [MENU_BTN_UPLOAD],
       [MENU_BTN_SERVERS],
-      [MENU_BTN_FILES, MENU_BTN_WEB, MENU_BTN_SCRAPER, MENU_BTN_VERSION],
+      [MENU_BTN_FILES, MENU_BTN_SCRAPER, MENU_BTN_VERSION],
       [MENU_BTN_HELP],
     ],
     resize_keyboard: true,
@@ -1068,14 +1062,7 @@ async function handleMessage(ctx: BotContext, update: any): Promise<void> {
     return;
   }
 
-  if (text === MENU_BTN_WEB) {
-    const buttons: Record<string, unknown>[][] = WEB_LINKS.map(([label, url]) => [
-      { text: label, url },
-    ]);
-    buttons.push([{ text: '◀ Menu', callback_data: 'menu' }]);
-    await showMenu(ctx, chatId, '🔗 Web pages', {
-      reply_markup: { inline_keyboard: buttons },
-    });
+  );
     return;
   }
 
