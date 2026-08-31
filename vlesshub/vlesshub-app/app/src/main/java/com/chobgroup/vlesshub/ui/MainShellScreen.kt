@@ -26,11 +26,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
 import com.chobgroup.vlesshub.core.theme.VlessHubColors
 import com.chobgroup.vlesshub.ui.icons.AppIcons
@@ -50,8 +50,8 @@ fun MainShellScreen() {
         bottomBar = {
             BottomBar(
                 items = listOf(
-                    BottomBarItem(0, "Links", Icons.Outlined.List, Icons.Filled.List),
-                    BottomBarItem(1, "MTProto", Icons.Outlined.Send, Icons.Filled.Send),
+                    BottomBarItem(0, "Links", Icons.AutoMirrored.Outlined.List, Icons.AutoMirrored.Filled.List),
+                    BottomBarItem(1, "MTProto", Icons.AutoMirrored.Outlined.Send, Icons.AutoMirrored.Filled.Send),
                     BottomBarItem(2, "Files", AppIcons.Folder, AppIcons.Folder),
                     BottomBarItem(3, "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
                 ),

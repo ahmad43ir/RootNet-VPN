@@ -124,8 +124,8 @@ fun LinksScreen() {
     var exporting by remember { mutableStateOf<String?>(null) }
     // Combined Copy/Export counter — every 5th DISTINCT config plays a video.
     // Persisted so closing the app doesn't reset it; a refresh does.
-    var actionCount by rememberSaveable { mutableIntStateOf(cache.actionCount()) }
-    var countedConfigs by remember { mutableStateOf(cache.countedConfigs()) }
+    var actionCount by rememberSaveable { mutableIntStateOf(cache.actionCount("links")) }
+    var countedConfigs by remember { mutableStateOf(cache.countedConfigs("links")) }
     var noClientConfig by remember { mutableStateOf<String?>(null) }
 
     var gate by remember { mutableStateOf<LibGateState?>(null) }
@@ -225,13 +225,47 @@ fun LinksScreen() {
         }
     }
 
-    fun refreshGate() = runGate(LibGatePurpose.REFRESH) {
-        refreshKey++
-        visibleCount = 10
-        cache.resetActionTracking()
-        actionCount = 0
-        countedConfigs = emptySet()
-        scope.launch { snackbar.showSnackbar("Refreshed — servers updated") }
+    fun refreshGate() {
+        val doRefresh: () -> Unit = {
+            // Clear the lock overlay first so the UI unblocks.
+            gate = null
+            pendingGateAction = null
+            refreshKey++
+            visibleCount = 10
+            cache.resetActionTracking("links")
+            actionCount = 0
+            countedConfigs = emptySet()
+            scope.launch {
+                snackbar.showSnackbar("Refreshed \u2014 pinging servers...")
+                pinging = true
+                val updated = servers.toMutableList()
+                for (i in updated.indices) {
+                    val ms = pingServer(updated[i])
+                    updated[i] = updated[i].copy(pingMs = ms)
+                    servers = updated.toList()
+                }
+                cache.saveServers(updated)
+                pinging = false
+                snackbar.showSnackbar("Ping complete")
+            }
+            Unit
+        }
+        // Show a picture (interstitial) ad only — try immediately, or
+        // prepare + wait up to 10s. No rewarded-video fallback for refresh.
+        if (AdiveryAdsManager.maybeShowInterstitial(onFinished = doRefresh)) return
+        scope.launch {
+            gate = LibGateState.FINDING
+            gatePurpose = LibGatePurpose.REFRESH
+            pendingGateAction = doRefresh
+            val ready = AdiveryAdsManager.awaitInterstitialReady(10_000)
+            if (ready && AdiveryAdsManager.maybeShowInterstitial(onFinished = doRefresh)) {
+                // Interstitial shown — gate clears when ad closes via onFinished.
+            } else {
+                // Ad not available — refresh without an ad.
+                doRefresh()
+            }
+        }
+        Unit
     }
 
     fun cancelGate() {
@@ -253,14 +287,14 @@ fun LinksScreen() {
         if (configKey !in countedConfigs) {
             countedConfigs = countedConfigs + configKey
             actionCount++
-            cache.setCountedConfigs(countedConfigs)
-            cache.setActionCount(actionCount)
+            cache.setCountedConfigs(countedConfigs, "links")
+            cache.setActionCount(actionCount, "links")
         }
         if (actionCount >= 5) {
             actionCount = 0
             countedConfigs = emptySet()
-            cache.setActionCount(0)
-            cache.setCountedConfigs(emptySet())
+            cache.setActionCount(0, "links")
+            cache.setCountedConfigs(emptySet(), "links")
             val shown = AdiveryAdsManager.maybeShowInterstitial(onFinished = { action() })
             if (!shown) {
                 runGate(LibGatePurpose.UNLOCK, onRewarded = { action() })
@@ -353,7 +387,7 @@ fun LinksScreen() {
                     if (pinging) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = VlessHubColors.AccentNeon, strokeWidth = 2.dp)
                     } else {
-                        Icon(AppIcons.NetworkCheck, contentDescription = "Ping servers", tint = VlessHubColors.AccentNeon)
+                        Icon(AppIcons.Speed, contentDescription = "Ping servers", tint = VlessHubColors.AccentNeon)
                     }
                 }
                 // Labeled so the user knows what gets refreshed.
@@ -454,7 +488,6 @@ fun LinksScreen() {
                                 }
                                 item { Spacer(Modifier.height(8.dp)) }
                             }
-                            AdiveryAdsManager.BannerAdView(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp))
                         }
                     }
                 }
@@ -1025,15 +1058,6 @@ private fun ConfigCard(
                 icon = AppIcons.ContentCopy,
                 onClick = onCopy,
             )
-            if (ConfigActions.isLinkLike(server.rawConfig)) {
-                ActionButton(
-                    label = if (exporting) "Opening…" else "Export",
-                    icon = AppIcons.OpenInNew,
-                    busy = exporting,
-                    enabled = !exporting,
-                    onClick = onOpen,
-                )
-            }
         }
     }
 }
@@ -1331,9 +1355,9 @@ private suspend fun geoLookup(server: VpnServer) = withContext(Dispatchers.IO) {
 }
 
 /** Video-gate overlay states. */
-private enum class LibGateState { FINDING, SKIPPED, UNAVAILABLE }
+enum class LibGateState { FINDING, SKIPPED, UNAVAILABLE }
 
 /** What the active video gate is for — Refresh, file download, or an unlock. */
-private enum class LibGatePurpose { REFRESH, DOWNLOAD, UNLOCK }
+enum class LibGatePurpose { REFRESH, DOWNLOAD, UNLOCK }
 
 /** Safety cap when reading a downloaded file back for Copy (10 MB). */

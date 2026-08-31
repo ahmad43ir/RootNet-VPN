@@ -160,27 +160,29 @@ object AppIcons {
         }.build()
     }
 
-    /** Standard Material "network_check" glyph (ping button). */
-    val NetworkCheck: ImageVector by lazy {
+    /** Clean speedometer gauge — ping / speed test button. */
+    val Speed: ImageVector by lazy {
         ImageVector.Builder(
-            name = "NetworkCheck",
+            name = "Speed",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
             viewportHeight = 24f,
         ).apply {
+            // Gauge arc (semicircle)
             addPath(
                 pathData = PathParser()
                     .parsePathString(
-                        "M15.9,5c-4.67,0 -8.48,2.9 -10.03,6.93l2.09,2.09C9.05,10.86 12.22,9 15.9,9c0.72,0 1.41,0.1 2.07,0.27l1.66,-1.66C18.26,6.6 17.14,6 15.9,6z" +
-                            "M22.92,7.03l-1.66,1.66c0.7,1.02 1.14,2.19 1.25,3.45h2.02c-0.1,-1.78 -0.82,-3.4 -1.61,-5.11z" +
-                            "M9.68,17.76l2.47,2.47 2.47,-2.47c-0.68,-0.68 -1.56,-1.1 -2.47,-1.1 -0.91,0 -1.79,0.42 -2.47,1.1z" +
-                            "M5.14,13.35l1.99,1.99c0.18,-0.12 0.38,-0.22 0.58,-0.31C6.94,14.49 5.89,13.93 5.14,13.35z" +
-                            "M20.31,17.76c0.74,-0.58 1.79,-1.14 2.57,-1.68l-2.09,-2.09c-0.2,0.09 -0.4,0.19 -0.58,0.31L20.31,17.76z" +
-                            "M16.92,14.35c-0.76,0.61 -1.8,1.17 -2.58,1.68l2.48,2.48 2.47,-2.47c-0.67,-0.68 -1.55,-1.1 -2.46,-1.1L16.92,14.35z" +
-                            "M2.06,11.09v2.02c1.71,0.11 3.32,0.63 4.73,1.46l0.66,-2.38C5.65,11.15 3.93,10.99 2.06,11.09z" +
-                            "M3.02,13.35v2.01c0.47,0 0.92,0.05 1.36,0.13l0.58,-2.02C4.4,13.42 3.71,13.35 3.02,13.35z" +
-                            "M12,13c-0.55,0 -1,0.45 -1,1s0.45,1 1,1 1,-0.45 1,-1S12.55,13 12,13z",
+                        "M20.38,8.57l-1.23,1.85a8,8 0,0 1,-0.22 7.58L5.07,18A8,8 0,0 1,15.58 6.85l1.85,-1.23A10,10 0,0 0,3.35 19a2,2 0,0 0,1.72 1h13.85a2,2 0,0 0,1.74 -1 10,10 0,0 0,-0.27 -10.44z",
+                    )
+                    .toNodes(),
+                fill = SolidColor(Color.Black),
+            )
+            // Needle / pointer
+            addPath(
+                pathData = PathParser()
+                    .parsePathString(
+                        "M10.59,15.41a2,2 0,0 0,2.83 0l5.66,-8.49 -8.49,5.66a2,2 0,0 0,0 2.83z",
                     )
                     .toNodes(),
                 fill = SolidColor(Color.Black),

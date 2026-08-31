@@ -18,8 +18,12 @@ import kotlinx.coroutines.withContext
  */
 object ChobGroupLink {
 
-    fun open(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
+    /**
+     * Opens the hub page. Accepts an optional [scope] to tie the background
+     * GeoIP lookup to a lifecycle; falls back to [ioScope] when null.
+     */
+    fun open(context: Context, scope: CoroutineScope? = null) {
+        (scope ?: ioScope).launch {
             val iran = runCatching { GeoIpResolver.isDeviceInIran() }.getOrDefault(false)
             val url = if (iran) AppConstants.PROXY_LANDING_URL else AppConstants.UPDATE_URL
             withContext(Dispatchers.Main) {
@@ -27,4 +31,7 @@ object ChobGroupLink {
             }
         }
     }
+
+    /** Default scope for callers that don't pass one. */
+    private val ioScope = CoroutineScope(Dispatchers.IO)
 }

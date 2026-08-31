@@ -15,10 +15,14 @@ import java.util.TimeZone
  */
 object TimeFormat {
 
-    private val PARSE = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
-    }
-    private val DISPLAY = SimpleDateFormat("h:mm a", Locale.US)
+    // SimpleDateFormat is NOT thread-safe — create per call instead of sharing.
+    private fun parser(): SimpleDateFormat =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+    private fun formatter(): SimpleDateFormat =
+        SimpleDateFormat("h:mm a", Locale.US)
 
     /** Returns a local "h:mm a" string, or null when the input isn't parseable. */
     fun formatScrapedTime(iso: String?): String? {
@@ -27,8 +31,8 @@ object TimeFormat {
             // Everything the pipeline writes is UTC; take up to the seconds
             // field so offsets / fractional seconds can't break the parse.
             val trimmed = iso.take(19)
-            val date: Date = PARSE.parse(trimmed) ?: return null
-            DISPLAY.format(date)
+            val date: Date = parser().parse(trimmed) ?: return null
+            formatter().format(date)
         } catch (_: Exception) {
             null
         }

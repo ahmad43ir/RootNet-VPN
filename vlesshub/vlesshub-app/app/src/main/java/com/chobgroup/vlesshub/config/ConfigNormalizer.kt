@@ -425,11 +425,7 @@ object ConfigNormalizer {
         }
     }
 
-    private fun buildMap(block: MutableMap<String, Any>.() -> Unit): Map<String, Any> {
-        val map = mutableMapOf<String, Any>()
-        map.block()
-        return map
-    }
+
 
     // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

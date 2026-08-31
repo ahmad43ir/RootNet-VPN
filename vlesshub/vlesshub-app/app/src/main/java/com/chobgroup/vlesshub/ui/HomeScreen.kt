@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
@@ -159,16 +160,16 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     // â”€â”€ Ad gates (mirrors RootNet v2.3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    var gate by remember { mutableStateOf<GateState?>(null) }
-    var gatePurpose by remember { mutableStateOf(GatePurpose.REFRESH) }
+    var gate by remember { mutableStateOf<LibGateState?>(null) }
+    var gatePurpose by remember { mutableStateOf(LibGatePurpose.REFRESH) }
     var pendingGateAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     // Combined Copy/Share/Open counter â€” every 3rd tap on a DIFFERENT proxy
     // shows the interstitial (re-tapping the same proxy doesn't count).
     // Combined Copy/Share/Open counter — every 5th DISTINCT proxy plays a
     // video. Persisted so closing the app doesn't reset it; a new batch does.
     val cache = ServerCacheStore.instance
-    var actionCount by rememberSaveable { mutableIntStateOf(cache.actionCount()) }
-    var countedProxies by remember { mutableStateOf(cache.countedConfigs()) }
+    var actionCount by rememberSaveable { mutableIntStateOf(cache.actionCount("proxies")) }
+    var countedProxies by remember { mutableStateOf(cache.countedConfigs("proxies")) }
 
     /**
      * Runs the lock gate: blur the list, show "Finding adâ€¦" while Adivery
@@ -177,7 +178,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
      * (not configured) the action proceeds without an ad so the app stays
      * usable until the real IDs are pasted.
      */
-    fun runGate(purpose: GatePurpose, onRewarded: () -> Unit) {
+    fun runGate(purpose: LibGatePurpose, onRewarded: () -> Unit) {
         if (!AdiveryAdsManager.isRewardedConfigured()) {
             onRewarded()
             return
@@ -185,12 +186,12 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
         if (gate != null) return
         gatePurpose = purpose
         pendingGateAction = onRewarded
-        gate = GateState.FINDING
+        gate = LibGateState.FINDING
         scope.launch {
             val ready = AdiveryAdsManager.awaitRewardedReady(45_000)
             if (!ready) {
                 // Ad couldn't load â€” the screen STAYS locked; "Try again" re-runs.
-                gate = GateState.UNAVAILABLE
+                gate = LibGateState.UNAVAILABLE
                 return@launch
             }
             val rewarded = runCatching { AdiveryAdsManager.showRewardedAd() }.getOrDefault(false)
@@ -199,7 +200,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                 pendingGateAction = null
                 onRewarded()
             } else {
-                gate = GateState.SKIPPED
+                gate = LibGateState.SKIPPED
             }
         }
     }
@@ -227,17 +228,17 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
         if (proxyLink !in countedProxies) {
             countedProxies = countedProxies + proxyLink
             actionCount++
-            cache.setCountedConfigs(countedProxies)
-            cache.setActionCount(actionCount)
+            cache.setCountedConfigs(countedProxies, "proxies")
+            cache.setActionCount(actionCount, "proxies")
         }
         if (actionCount >= 5) {
             actionCount = 0
             countedProxies = emptySet()
-            cache.setActionCount(0)
-            cache.setCountedConfigs(emptySet())
+            cache.setActionCount(0, "proxies")
+            cache.setCountedConfigs(emptySet(), "proxies")
             val shown = AdiveryAdsManager.maybeShowInterstitial(onFinished = { action() })
             if (!shown) {
-                runGate(GatePurpose.UNLOCK, onRewarded = { action() })
+                runGate(LibGatePurpose.UNLOCK, onRewarded = { action() })
             }
         } else {
             action()
@@ -247,9 +248,9 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
     val onGetProxies: () -> Unit = {
         if (viewModel.hasLoadedOnce) {
             // "Get a new batch" is gated by a rewarded video (full watch).
-            runGate(GatePurpose.REFRESH) {
+            runGate(LibGatePurpose.REFRESH) {
                 viewModel.loadProxies()
-                cache.resetActionTracking()
+                cache.resetActionTracking("proxies")
                 actionCount = 0
                 countedProxies = emptySet()
             }
@@ -294,7 +295,6 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
 
             // Status
             when (val state = uiState) {
-                is HomeUiState.Success -> PoolStatusChip(state.batch.working, state.batch.poolSize)
                 is HomeUiState.Error -> ErrorBanner(state.message)
                 else -> {}
             }
@@ -379,7 +379,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                                                 onFinished = { viewModel.loadMore() },
                                             )
                                             if (!shown) {
-                                                runGate(GatePurpose.UNLOCK) { viewModel.loadMore() }
+                                                runGate(LibGatePurpose.UNLOCK) { viewModel.loadMore() }
                                             }
                                         }
                                     }
@@ -400,12 +400,6 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                 }
             }
 
-            // Persistent banner ad pinned at the bottom â€” Adivery only.
-            AdiveryAdsManager.BannerAdView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-            )
         }
 
         // Lock overlay while a video gate is pending (v2.3 lock rule).
@@ -423,9 +417,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
 
 // â”€â”€â”€ Ad gate state (mirrors RootNet v2.3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-enum class GateState { FINDING, SKIPPED, UNAVAILABLE }
 
-enum class GatePurpose { REFRESH, UNLOCK }
 
 /**
  * Full-screen lock overlay shown while a video gate is pending. The list
@@ -434,8 +426,8 @@ enum class GatePurpose { REFRESH, UNLOCK }
  */
 @Composable
 private fun AdLockOverlay(
-    state: GateState,
-    purpose: GatePurpose,
+    state: LibGateState,
+    purpose: LibGatePurpose,
     onRetry: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -458,8 +450,9 @@ private fun AdLockOverlay(
             modifier = Modifier.padding(horizontal = 32.dp),
         ) {
             val action = when (purpose) {
-                GatePurpose.REFRESH -> "refresh your proxies"
-                GatePurpose.UNLOCK -> "continue"
+                LibGatePurpose.REFRESH -> "refresh your proxies"
+                LibGatePurpose.UNLOCK -> "continue"
+                LibGatePurpose.DOWNLOAD -> "continue"
             }
             Icon(
                 Icons.Filled.Lock,
@@ -470,9 +463,9 @@ private fun AdLockOverlay(
             Spacer(Modifier.height(14.dp))
             Text(
                 when (state) {
-                    GateState.FINDING -> "Finding adâ€¦"
-                    GateState.SKIPPED -> "Watch the full ad to $action"
-                    GateState.UNAVAILABLE -> "Ad unavailable"
+                    LibGateState.FINDING -> "Finding adâ€¦"
+                    LibGateState.SKIPPED -> "Watch the full ad to $action"
+                    LibGateState.UNAVAILABLE -> "Ad unavailable"
                 },
                 color = VlessHubColors.TextPrimary,
                 fontSize = 16.sp,
@@ -482,9 +475,9 @@ private fun AdLockOverlay(
             Spacer(Modifier.height(6.dp))
             Text(
                 when (state) {
-                    GateState.FINDING -> "Please wait while we load the ad â€” the screen stays locked until it plays"
-                    GateState.SKIPPED -> "Your screen stays locked until the ad is watched"
-                    GateState.UNAVAILABLE -> "We couldn't load the ad â€” the screen stays locked. Try again."
+                    LibGateState.FINDING -> "Please wait while we load the ad â€” the screen stays locked until it plays"
+                    LibGateState.SKIPPED -> "Your screen stays locked until the ad is watched"
+                    LibGateState.UNAVAILABLE -> "We couldn't load the ad â€” the screen stays locked. Try again."
                 },
                 color = VlessHubColors.TextMuted,
                 fontSize = 12.sp,
@@ -492,14 +485,14 @@ private fun AdLockOverlay(
             )
             Spacer(Modifier.height(22.dp))
             when (state) {
-                GateState.FINDING -> CircularProgressIndicator(
+                LibGateState.FINDING -> CircularProgressIndicator(
                     color = VlessHubColors.AccentNeon,
                     modifier = Modifier.size(28.dp),
                     strokeWidth = 2.5.dp,
                 )
-                GateState.SKIPPED -> ActionChip("Watch ad", Icons.Default.Refresh, onClick = onRetry)
+                LibGateState.SKIPPED -> ActionChip("Watch ad", Icons.Default.Refresh, onClick = onRetry)
                 // No "continue without ad" â€” the screen stays locked.
-                GateState.UNAVAILABLE -> ActionChip("Try again", Icons.Default.Refresh, onClick = onRetry)
+                LibGateState.UNAVAILABLE -> ActionChip("Try again", Icons.Default.Refresh, onClick = onRetry)
             }
         }
     }
@@ -633,7 +626,7 @@ private fun ProxyCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ActionChip("Copy", AppIcons.ContentCopy, onCopy)
                 ActionChip("Share", Icons.Default.Share, onShare)
-                ActionChip("Open", Icons.Default.Send, onOpen)
+                ActionChip("Open", Icons.AutoMirrored.Filled.Send, onOpen)
             }
         }
     }

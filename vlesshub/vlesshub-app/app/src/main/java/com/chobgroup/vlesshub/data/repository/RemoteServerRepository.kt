@@ -2,7 +2,7 @@
 
 import com.chobgroup.vlesshub.data.AppConstants
 import com.chobgroup.vlesshub.data.model.ConfigFormat
-import com.chobgroup.vlesshub.data.model.ProtocolType
+import com.chobgroup.vlesshub.data.model.VpnProtocol
 import com.chobgroup.vlesshub.data.model.VpnServer
 import com.chobgroup.vlesshub.data.remote.PinnedHttpClient
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +54,7 @@ class RemoteServerRepository : ServerRepository {
                 flag = item.optString("flag", "\uD83C\uDF10"),
                 country = item.optString("country", "Cloud"),
                 rawConfig = config,
-                type = ProtocolType.fromString(item.optString("type")),
+                type = VpnProtocol.fromString(item.optString("type")),
                 configFormat = ConfigFormat.fromString(item.optString("config_format")),
                 createdAt = item.optString("created_at", "").takeIf { it.isNotBlank() },
                 sourceChannel = item.optString("source_channel", "").takeIf { it.isNotBlank() },

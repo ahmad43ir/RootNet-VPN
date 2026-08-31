@@ -13,14 +13,18 @@ data class GeoInfo(val ip: String, val country: String, val countryCode: String)
 /**
  * GeoIP lookups against the `geo-api` Edge Function (rate-limited 60/min/IP,
  * results normalized to `{ip, country, countryCode}`). Per-host results are
- * cached in memory so re-renders / refreshes don't burn the quota.
+ * cached in memory (LRU, max 256 entries) so re-renders / refreshes don't
+ * burn the quota.
  */
 object GeoIpResolver {
 
     private const val ENDPOINT = "${AppConstants.SUPABASE_URL}/functions/v1/geo-api"
 
-    /** host/ip → resolved info, process-lifetime cache. */
-    private val cache = LinkedHashMap<String, GeoInfo>(64)
+    /** host/ip → resolved info, process-lifetime LRU cache (max 256 entries). */
+    private val cache = object : LinkedHashMap<String, GeoInfo>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, GeoInfo>?): Boolean =
+            size > 256
+    }
 
     /** Resolves a config host (domain or literal IP) to its country. */
     suspend fun lookupHost(host: String): GeoInfo? = withContext(Dispatchers.IO) {

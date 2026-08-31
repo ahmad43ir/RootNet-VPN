@@ -1,55 +1,61 @@
-# 📦 ProxyBox — Free MTProto Proxies for Telegram
+# 📦 VlessHub — Free VLESS & MTProto Proxies
 
-A lightweight **Android app** (Kotlin + Jetpack Compose) that hands out
-**10 random working MTProto proxies** (`tg://proxy` links) per batch from the
-shared RootNet Supabase pool. Monetized with **AdMob** — a persistent banner
-plus a throttled interstitial before each new batch.
+A lightweight **Android app** (Kotlin + Jetpack Compose) that provides
+**free VLESS VPN configs** and **MTProto proxies** for Telegram.
+Monetized with **Adivery** — a persistent banner, throttled interstitials,
+and rewarded video for batch refresh.
 
 ```
-User taps "Get 10 proxies"
-  → (refresh only) AdMob interstitial — throttled to 1/min
-  → GET proxy-api/proxies → 10 random active proxies (working first)
-  → cards with Copy / Share / Open in Telegram
+User opens the app
+  → GET vlesshub-api/servers → VLESS servers with geo data
+  → cards with Copy / Share / Open in V2RayNG / NekoBox / Hiddify
+  → MTProto proxy pool via proxy-api
 ```
 
 ## Stack
 
-- Same toolchain as RootNet: **AGP 9.0.1, Kotlin 2.3.20, Gradle 9.1.0,
-  compileSdk 36, minSdk 23, Java 17** — with the regional Aliyun mirror
-  fallbacks so builds work in the target region.
-- **AdMob** `play-services-ads` 23.6.0 (banner + interstitial).
-- Backend: `rootnet-vpn/supabase/functions/proxy-api/` — public GET `/proxies`,
-  IP rate-limited, no login (that's why there's no user/table separation:
-  the app is fully anonymous).
+- **AGP 9.0.1, Kotlin 2.3.20, Gradle 9.1.0, compileSdk 36, minSdk 23, Java 17**
+- **Jetpack Compose** with Material 3
+- **Adivery SDK** 4.9.0 (banner + interstitial + rewarded video)
+- **OkHttp** 5.4.0 for networking
+- Backend: Cloudflare Workers on D1 + Supabase
 
 ## Build
 
 ```bash
 cd vlesshub-app
 ./gradlew :app:assembleDebug          # debug APK
-./gradlew :app:assembleRelease        # release (R8-minified, unsigned)
+./gradlew :app:assembleRelease        # release (R8-minified, needs signing)
 ```
 
-## Before release (AdMob)
+## Before Release
 
-1. Create the app in the **AdMob console** → get the **App ID**.
-2. Create **Banner** and **Interstitial** ad units → get their unit IDs.
-3. Put the real App ID in `app/src/main/AndroidManifest.xml`
-   (`com.google.android.gms.ads.APPLICATION_ID`).
-4. Put the real unit IDs in `ads/AdManager.kt`
-   (`BANNER_UNIT_ID`, `INTERSTITIAL_UNIT_ID`).
+1. Create the app in the **Adivery dashboard** → get the **App ID**.
+2. Create **Interstitial**, **Rewarded**, and **Banner** placements → get their UUIDs.
+3. Replace the placeholder IDs in `ads/AdiveryAdsManager.kt`:
+   - `APP_ID`
+   - `INTERSTITIAL_PLACEMENT_ID`
+   - `REWARDED_PLACEMENT_ID`
+   - `BANNER_PLACEMENT_ID`
 
-Until then the app uses Google's official **test** ad unit IDs (safe to ship,
-shows "Test ad" banners).
+Until then the app gracefully skips all ads (no lockout).
 
-## Backend
+## Release Signing
 
-The `proxy-api` Supabase Edge Function must be deployed once:
+1. Create a keystore: `keytool -genkey -v -keystore vlesshub-release.jks ...`
+2. Create `keystore.properties` at the `vlesshub-app/` root:
+   ```
+   storeFile=keystore/vlesshub-release.jks
+   storePassword=your_password
+   keyAlias=your_alias
+   keyPassword=your_key_password
+   ```
+3. Both `keystore.properties` and `keystore/` are gitignored — never commit them.
 
-```bash
-cd supabase
-npx supabase functions deploy proxy-api --no-verify-jwt --project-ref bprkazfxqmanrybiexnh
+## Architecture
+
 ```
-
-Requires migration `20260808000001` (`scraper_proxies`) + a seeded pool
-(see `rootnet-vpn/supabase/functions/proxy-api/README.md`).
+vlesshub-app/          ← This Android app
+vless-scraper/         ← Telegram channel scraper (Python/Telethon)
+telegram-bot/          ← Telegram bot for commands
+```

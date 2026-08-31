@@ -3,7 +3,7 @@
 import android.content.Context
 import android.content.SharedPreferences
 import com.chobgroup.vlesshub.data.model.ConfigFormat
-import com.chobgroup.vlesshub.data.model.ProtocolType
+import com.chobgroup.vlesshub.data.model.VpnProtocol
 import com.chobgroup.vlesshub.data.model.VpnFile
 import com.chobgroup.vlesshub.data.model.VpnServer
 import org.json.JSONArray
@@ -124,26 +124,30 @@ class ServerCacheStore private constructor() {
     }
 
     // ── Ad-gate click tracking (persisted — survives app restarts so the
-    //    counter can't be reset by closing/reopening the app) ─────────────
+    //    counter can't be reset by closing/reopening the app).
+    //    [tab] prefixes the keys so each tab (proxies/links/files) has its
+    //    own independent counter — refreshing proxies won't reset the links
+    //    ad cycle and vice-versa. ─────────────────────────────────────────
 
-    /** Copy/Export (links) or Copy/Share/Open (proxies) taps in this cycle. */
-    fun actionCount(): Int = prefs.getInt(KEY_ACTION_COUNT, 0)
+    /** Taps in this cycle for the given tab. */
+    fun actionCount(tab: String = "links"): Int =
+        prefs.getInt("${tab}_$KEY_ACTION_COUNT", 0)
 
-    fun setActionCount(value: Int) {
-        prefs.edit().putInt(KEY_ACTION_COUNT, value).apply()
+    fun setActionCount(value: Int, tab: String = "links") {
+        prefs.edit().putInt("${tab}_$KEY_ACTION_COUNT", value).apply()
     }
 
-    /** Distinct configs already counted in this cycle. */
-    fun countedConfigs(): Set<String> =
-        prefs.getStringSet(KEY_COUNTED_CONFIGS, emptySet()) ?: emptySet()
+    /** Distinct configs already counted in this cycle for the given tab. */
+    fun countedConfigs(tab: String = "links"): Set<String> =
+        prefs.getStringSet("${tab}_$KEY_COUNTED_CONFIGS", emptySet()) ?: emptySet()
 
-    fun setCountedConfigs(values: Set<String>) {
-        prefs.edit().putStringSet(KEY_COUNTED_CONFIGS, values).apply()
+    fun setCountedConfigs(values: Set<String>, tab: String = "links") {
+        prefs.edit().putStringSet("${tab}_$KEY_COUNTED_CONFIGS", values).apply()
     }
 
-    /** Refresh resets the cycle — the user explicitly reloads everything. */
-    fun resetActionTracking() {
-        prefs.edit().remove(KEY_ACTION_COUNT).remove(KEY_COUNTED_CONFIGS).apply()
+    /** Refresh resets the cycle for the given tab only. */
+    fun resetActionTracking(tab: String = "links") {
+        prefs.edit().remove("${tab}_$KEY_ACTION_COUNT").remove("${tab}_$KEY_COUNTED_CONFIGS").apply()
     }
 
     /** Successfully completed file downloads in this cycle (failed/partial
@@ -177,6 +181,7 @@ private fun VpnServer.toJson(): JSONObject = JSONObject().apply {
     put("configFormat", configFormat.name.lowercase())
     if (pingMs != null) put("pingMs", pingMs)
     if (createdAt != null) put("createdAt", createdAt)
+    if (sourceChannel != null) put("sourceChannel", sourceChannel)
 }
 
 private fun VpnFile.toJson(): JSONObject = JSONObject().apply {
@@ -186,6 +191,7 @@ private fun VpnFile.toJson(): JSONObject = JSONObject().apply {
     if (uploadedAt != null) put("uploadedAt", uploadedAt)
     put("isEncrypted", isEncrypted)
     put("configCount", configCount)
+    if (sourceChannel != null) put("sourceChannel", sourceChannel)
 }
 
 private fun JSONObject.toVpnFile(): VpnFile = VpnFile(
@@ -195,6 +201,7 @@ private fun JSONObject.toVpnFile(): VpnFile = VpnFile(
     uploadedAt = if (has("uploadedAt")) optString("uploadedAt").takeIf { it.isNotBlank() } else null,
     isEncrypted = optBoolean("isEncrypted", false),
     configCount = optInt("configCount", 0),
+    sourceChannel = if (has("sourceChannel")) optString("sourceChannel").takeIf { it.isNotBlank() } else null,
 )
 
 private fun JSONObject.toVpnServer(): VpnServer = VpnServer(
@@ -203,8 +210,9 @@ private fun JSONObject.toVpnServer(): VpnServer = VpnServer(
     flag = optString("flag", "\uD83C\uDF10").let { if (it.contains("[C@") || it.contains("[C")) "\uD83D\uDEF0" else it },
     country = optString("country", "Cloud"),
     rawConfig = optString("rawConfig", ""),
-    type = ProtocolType.fromString(optString("type")),
+    type = VpnProtocol.fromString(optString("type")),
     configFormat = ConfigFormat.fromString(optString("configFormat")),
     pingMs = if (has("pingMs")) optInt("pingMs") else null,
     createdAt = if (has("createdAt")) optString("createdAt").takeIf { it.isNotBlank() } else null,
+    sourceChannel = if (has("sourceChannel")) optString("sourceChannel").takeIf { it.isNotBlank() } else null,
 )

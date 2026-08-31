@@ -188,7 +188,6 @@ yarn-error.log*
 # ──────────────────────────────────────────────
 # 📝 Logs & Diagnostics
 # ──────────────────────────────────────────────
-*.log
 logs/
 **/logs/
 
@@ -237,6 +236,15 @@ app.*.map.json
 
 
 # ──────────────────────────────────────────────
+# 📡 Telegram Session Files — NEVER COMMIT THESE
+# ──────────────────────────────────────────────
+# Telethon/Pyrogram session files contain full account access.
+# Anyone with a session file can log in as that account.
+*.session
+*.session-journal
+
+
+# ──────────────────────────────────────────────
 # 📡 Telegram Scraper Config Files — NEVER COMMIT THESE
 # ──────────────────────────────────────────────
 # The vless-scraper downloads .npv/.npvt (Nepster/NekoBox exports) and other
@@ -251,3 +259,12 @@ app.*.map.json
 *.conf
 *.config
 *.ovpn
+vlesshub/VlessHub-*.apk
+*.apk
+
+# Admin VlessHub build artifacts
+vlesshub/admin_vlesshub/app/build/
+vlesshub/admin_vlesshub/build/
+vlesshub/admin_vlesshub/local.properties
+vlesshub/admin_vlesshub/.gradle/
+vlesshub/admin_vlesshub/.kotlin/

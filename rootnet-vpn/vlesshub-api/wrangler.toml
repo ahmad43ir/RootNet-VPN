@@ -13,12 +13,18 @@ compatibility_date = "2026-07-28"
 #   GET /version              → app_config row
 #   GET /health
 #
-# Admin (X-Admin-Key header, used by the @Vless_hub_bot):
+# Admin (X-Admin-Key header, used by the @Vless_hub_bot + admin app):
+#   DELETE /servers/:id       → delete a server config by ID
+#   DELETE /files/:id         → delete a VPN file by ID
+#   DELETE /proxies/:id       → delete a proxy by ID
 #   servers / proxies / files CRUD, channels, last-scrape, config
 #   POST /ingest { links: [...], source } — scraper forwarding target
 # ============================================================
 
-[[d1_databases]]
-binding = "DB"
-database_name = "vlesshub"
-database_id = "4aa0a8d3-7389-43aa-85f6-daab718362e0"
+[[kv_namespaces]]
+binding = "OTP_STORE"
+id = "d770ac286e724e3aacd76146dbc5f523"
+
+[vars]
+SUPABASE_URL = "https://bprkazfxqmanrybiexnh.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwcmthemZ4cW1hbnJ5YmlleG5oIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDA2MzIwOSwiZXhwIjoyMDk5NjM5MjA5fQ.3Bhewah8dYT2EaBUg1o5BZAcHUmwad90oXjr5m2lt04"
