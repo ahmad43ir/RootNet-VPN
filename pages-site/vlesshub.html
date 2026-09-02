@@ -174,6 +174,41 @@
       color: rgba(234, 234, 234, 0.45);
     }
     .hero-fa strong { color: #4CFF88; font-weight: 600; }
+
+    /* ─── LANGUAGE TOGGLE ─── */
+    .lang-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(76, 255, 136, 0.06);
+      border: 1px solid rgba(76, 255, 136, 0.2);
+      border-radius: 20px;
+      padding: 3px;
+      margin-left: 12px;
+    }
+    .lang-toggle button {
+      background: transparent;
+      border: none;
+      color: rgba(234, 234, 234, 0.5);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: inherit;
+    }
+    .lang-toggle button.active {
+      background: #4CFF88;
+      color: #0B1A12;
+    }
+    /* Language visibility states (default: both shown) */
+    body[data-lang="en"] .lang-fa,
+    body[data-lang="fa"] .lang-en { display: none !important; }
+    /* When FA-only, page direction flips for the Persian card */
+    body[data-lang="fa"] .fa-card { max-width: none; }
+    @media (max-width: 768px) {
+      .lang-toggle { margin-left: 0; }
+    }
     .btn-primary {
       background: #4CFF88;
       color: #0B1A12;
@@ -557,6 +592,11 @@
         <a href="#features">Features</a>
         <a href="#install">Install</a>
         <a href="#pool">Live Pool</a>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" data-lang-btn="both" class="active">Both</button>
+          <button type="button" data-lang-btn="en">EN</button>
+          <button type="button" data-lang-btn="fa">فا</button>
+        </div>
         <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener" class="btn-open-nav">Open App</a>
       </div>
     </nav>
@@ -578,7 +618,7 @@
         VPN config files — auto-scraped and refreshed around the clock. No APK, no account,
         no bloat. Just open it.
       </p>
-      <p class="hero-fa">
+      <p class="hero-fa lang-fa">
         <strong>ویلس‌هاب</strong> — کانفیگ‌های تازهٔ VLESS، پروکسی MTProto و فایل‌های کانفیگ،
         مستقیم در مرورگر. بدون نصب، بدون ثبت‌نام، کاملاً رایگان — روی گوشی و کامپیوتر.
       </p>
@@ -699,7 +739,7 @@
   </section>
 
   <!-- ─── PERSIAN (فارسی) ─── -->
-  <section class="fa-section" id="fa">
+  <section class="fa-section lang-fa" id="fa">
     <div class="container">
       <div class="fa-card">
         <h2>ویلس‌هاب — کانفیگ‌های رایگان VPN، در مرورگر شما</h2>
@@ -746,6 +786,22 @@
 
   <!-- ─── JAVASCRIPT ─── -->
   <script>
+    // ─── LANGUAGE TOGGLE ───
+    const LANG_KEY = 'vlesshub_lang';
+    function setLang(lang) {
+      document.body.dataset.lang = lang;
+      document.querySelectorAll('[data-lang-btn]').forEach(b => {
+        b.classList.toggle('active', b.dataset.langBtn === lang);
+      });
+      try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    }
+    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+      btn.addEventListener('click', () => setLang(btn.dataset.langBtn));
+    });
+    let savedLang = 'both';
+    try { savedLang = localStorage.getItem(LANG_KEY) || 'both'; } catch (e) {}
+    if (savedLang === 'en' || savedLang === 'fa') setLang(savedLang);
+
     // ─── LIVE POOL STATUS ───
     async function loadPoolStatus() {
       const apiUrl = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/proxy-api/proxies';
