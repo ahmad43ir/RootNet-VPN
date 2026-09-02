@@ -4,8 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chob Group — AI-Crafted Apps on Free Infrastructure</title>
-  <meta name="description" content="Chob Group builds apps with AI on free services like Cloudflare, Supabase, and Netlify — for personal and small group use." />
+  <meta name="description" content="Chob Group builds real, useful apps with AI on free-tier cloud services — RootNet VPN, VlessHub PWA, GeoIP API, GeoPoint Studio and more." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%238888FF' stroke-width='2'/><text x='50' y='62' font-size='40' text-anchor='middle' fill='%238888FF'>C</text></svg>" />
+  <meta property="og:title" content="Chob Group — AI-Crafted Apps on Free Infrastructure" />
+  <meta property="og:description" content="Real, useful apps built with AI on free-tier cloud services: RootNet VPN, VlessHub PWA, GeoIP API, GeoPoint Studio, Iran Elections." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://chobgroup.pages.dev/" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="fa_IR" />
+  <link rel="alternate" hreflang="en" href="https://chobgroup.pages.dev/" />
+  <link rel="alternate" hreflang="x-default" href="https://chobgroup.pages.dev/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Chob Group",
+    "url": "https://chobgroup.pages.dev/",
+    "description": "Independent studio building real, useful apps with AI coding agents on free-tier cloud infrastructure.",
+    "slogan": "AI + free infrastructure = practical tools",
+    "sameAs": []
+  }
+  </script>
 
   <style>
     /* ─── RESET ─── */
@@ -137,13 +156,20 @@
     .ad-icon.geoip { background: rgba(255, 200, 50, 0.1); }
     .ad-icon.geopoint { background: rgba(100, 200, 255, 0.1); }
     .ad-body { flex: 1; min-width: 0; }
-    .ad-body h3 { font-size: 17px; font-weight: 700; }
+    .ad-body h3 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ad-body p { font-size: 13px; color: rgba(224, 224, 224, 0.5); margin-top: 3px; line-height: 1.5; }
     .ad-cta {
       flex-shrink: 0; font-size: 13px; font-weight: 700; color: #8888FF;
       white-space: nowrap; transition: transform 0.3s;
     }
     .ad-card:hover .ad-cta { transform: translateX(3px); }
+    .status-chip {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+      padding: 2px 8px; border-radius: 10px; text-transform: uppercase;
+    }
+    .status-chip.live { background: rgba(57, 255, 20, 0.12); color: #39FF14; border: 1px solid rgba(57, 255, 20, 0.25); }
+    .status-chip.dev { background: rgba(255, 200, 50, 0.12); color: #FFC832; border: 1px solid rgba(255, 200, 50, 0.25); }
+    .status-chip.planned { background: rgba(136, 136, 255, 0.12); color: #8888FF; border: 1px solid rgba(136, 136, 255, 0.25); }
 
     /* ─── FOOTER ─── */
     footer {
@@ -249,15 +275,15 @@
   <section class="section" id="projects">
     <div class="container">
       <h2 class="section-title">Our <span>Projects</span></h2>
-      <p class="section-sub" style="font-size:14px; margin-bottom:32px;">Each tool has its own dedicated page — tap through to learn more or download.</p>
+      <p class="section-sub" style="font-size:14px; margin-bottom:32px;">Everything we've built or are building — tap through to learn more or open the app.</p>
 
       <div class="projects-grid">
 
         <a href="/rootnet.html" class="ad-card fade-in">
           <div class="ad-icon rootnet">🌿</div>
           <div class="ad-body">
-            <h3>RootNet</h3>
-            <p>Fresh VLESS/V2Ray configs for your VPN client — copy or export, no account.</p>
+            <h3>RootNet <span class="status-chip live">Live</span></h3>
+            <p>Android VPN config launcher — fresh VLESS/V2Ray configs, copy or export into your own client. Zero logs, no account.</p>
           </div>
           <div class="ad-cta">Learn More →</div>
         </a>
@@ -265,8 +291,8 @@
         <a href="/vlesshub.html" class="ad-card fade-in">
           <div class="ad-icon proxybox">📲</div>
           <div class="ad-body">
-            <h3>VlessHub PWA</h3>
-            <p>Installable web app with fresh VLESS configs & MTProto proxies — Android, iOS & PC, no APK.</p>
+            <h3>VlessHub PWA <span class="status-chip live">Live</span></h3>
+            <p>Installable web app with fresh VLESS configs, MTProto proxies and config files — Android, iOS & PC, no APK.</p>
           </div>
           <div class="ad-cta">Learn More →</div>
         </a>
@@ -274,8 +300,8 @@
         <a href="/geoip.html" class="ad-card fade-in">
           <div class="ad-icon geoip">🌍</div>
           <div class="ad-body">
-            <h3>GeoIP</h3>
-            <p>Free IP geolocation API — pass an IP, get the country and flag.</p>
+            <h3>GeoIP <span class="status-chip live">Live</span></h3>
+            <p>Free IP geolocation API — pass an IP, get the country and flag. No key, no quota games.</p>
           </div>
           <div class="ad-cta">Learn More →</div>
         </a>
@@ -283,7 +309,7 @@
         <a href="https://iran-gis.pages.dev" class="ad-card fade-in">
           <div class="ad-icon geopoint">🗺️</div>
           <div class="ad-body">
-            <h3>GeoPoint Studio</h3>
+            <h3>GeoPoint Studio <span class="status-chip live">Live</span></h3>
             <p>UTM WGS84 points to Excel / KML / KMZ — right in the browser.</p>
           </div>
           <div class="ad-cta">Open App →</div>
@@ -292,11 +318,19 @@
         <a href="https://iran-elections.pages.dev" class="ad-card fade-in">
           <div class="ad-icon" style="background: rgba(136, 136, 255, 0.1);">🗳️</div>
           <div class="ad-body">
-            <h3>Iran Elections</h3>
+            <h3>Iran Elections <span class="status-chip live">Live</span></h3>
             <p>Comprehensive Iranian election information platform — candidates, elections, and user engagement.</p>
           </div>
           <div class="ad-cta">Open App →</div>
         </a>
+
+        <div class="ad-card fade-in" style="cursor: default;">
+          <div class="ad-icon" style="background: rgba(136, 136, 255, 0.06); opacity: 0.75;">🛰️</div>
+          <div class="ad-body" style="opacity: 0.75;">
+            <h3>RootNet for Google Sheets <span class="status-chip dev">In Development</span></h3>
+            <p>RootNet's config pipeline moving to Google Apps Script + Sheets — free forever, even without Cloudflare.</p>
+          </div>
+        </div>
 
       </div>
     </div>
