@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — RootNet VPN</title>
+  <meta name="description" content="RootNet VPN Privacy Policy — how we collect, use, and protect your data." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%2339FF14' stroke-width='2'/><circle cx='50' cy='50' r='4' fill='%2339FF14'/><line x1='50' y1='50' x2='50' y2='10' stroke='%2339FF14' stroke-width='1.5' opacity='0.4'/><line x1='50' y1='50' x2='85' y2='50' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/><line x1='50' y1='50' x2='22' y2='76' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/></svg>" />
+
+  <style>
+    /* ─── RESET & BASE ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0B1A12;
+      color: #EAEAEA;
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── ANIMATED BACKGROUND ─── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(57, 255, 20, 0.06), transparent 70%);
+      top: -200px;
+      right: -200px;
+      z-index: 0;
+      animation: glowPulse 4s ease-in-out infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% { opacity: 0.5; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.08);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid rgba(57, 255, 20, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .logo-icon::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #39FF14;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #39FF14;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .logo-text span { color: #39FF14; }
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    .nav-links a {
+      font-size: 14px;
+      color: rgba(234, 234, 234, 0.6);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #39FF14; }
+    .btn-back {
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      color: #EAEAEA;
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .btn-back:hover {
+      border-color: #39FF14;
+      background: rgba(57, 255, 20, 0.06);
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #39FF14, #00FF66);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 15px;
+      color: rgba(234, 234, 234, 0.5);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .last-updated {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(57, 255, 20, 0.15);
+      background: rgba(57, 255, 20, 0.04);
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.4);
+    }
+
+    /* ─── CONTENT ─── */
+    .content {
+      padding: 20px 0 60px;
+    }
+    .policy-section {
+      background: rgba(15, 30, 20, 0.5);
+      border: 1px solid rgba(57, 255, 20, 0.06);
+      border-radius: 16px;
+      padding: 32px 28px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .policy-section:hover {
+      border-color: rgba(57, 255, 20, 0.12);
+    }
+    .policy-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #39FF14;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .policy-section h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: rgba(57, 255, 20, 0.1);
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #39FF14;
+      flex-shrink: 0;
+    }
+    .policy-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #EAEAEA;
+      margin: 20px 0 10px;
+    }
+    .policy-section h3:first-of-type {
+      margin-top: 0;
+    }
+    .policy-section p {
+      font-size: 14px;
+      color: rgba(234, 234, 234, 0.7);
+      margin-bottom: 14px;
+    }
+    .policy-section p:last-child {
+      margin-bottom: 0;
+    }
+    .policy-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 14px;
+    }
+    .policy-section ul li {
+      font-size: 14px;
+      color: rgba(234, 234, 234, 0.7);
+      padding: 6px 0 6px 24px;
+      position: relative;
+    }
+    .policy-section ul li::before {
+      content: '›';
+      position: absolute;
+      left: 4px;
+      color: #39FF14;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .policy-section strong {
+      color: rgba(234, 234, 234, 0.9);
+    }
+    .policy-section .highlight-box {
+      background: rgba(57, 255, 20, 0.04);
+      border: 1px solid rgba(57, 255, 20, 0.1);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .policy-section .highlight-box p {
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+    .policy-section .highlight-box strong {
+      color: #39FF14;
+    }
+    .policy-section a {
+      color: #39FF14;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-color: rgba(57, 255, 20, 0.3);
+      transition: text-decoration-color 0.2s;
+    }
+    .policy-section a:hover {
+      text-decoration-color: #39FF14;
+    }
+
+    /* ─── TABLE ─── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(57, 255, 20, 0.06);
+      border-bottom: 1px solid rgba(57, 255, 20, 0.1);
+      color: #39FF14;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.04);
+      color: rgba(234, 234, 234, 0.7);
+    }
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid rgba(57, 255, 20, 0.06);
+      padding: 32px 0;
+      text-align: center;
+    }
+    footer p {
+      font-size: 13px;
+      color: rgba(234, 234, 234, 0.3);
+    }
+    footer .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+    footer .footer-links a {
+      font-size: 13px;
+      color: rgba(234, 234, 234, 0.4);
+      transition: color 0.2s;
+    }
+    footer .footer-links a:hover {
+      color: #39FF14;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links a:not(.btn-back) { display: none; }
+      .policy-section { padding: 24px 20px; }
+      .data-table { font-size: 13px; }
+      .data-table th,
+      .data-table td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── BACKGROUND ─── -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- ─── NAV ─── -->
+  <div class="container">
+    <nav>
+      <a href="index.html" class="logo">
+        <div class="logo-icon"><span class="logo-icon"></span></div>
+        <div class="logo-text">Root<span>Net</span></div>
+      </a>
+      <div class="nav-links">
+        <a href="rootnet.html#features">Features</a>
+        <a href="rootnet.html#servers">Servers</a>
+        <a href="rootnet.html" class="btn-back">← RootNet</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="container">
+      <h1>Privacy <span>Policy</span></h1>
+      <p>How RootNet handles your data, your privacy, and your security.</p>
+      <div class="last-updated">Last updated: August 13, 2026</div>
+    </div>
+  </section>
+
+  <!-- ─── CONTENT ─── -->
+  <section class="content">
+    <div class="container">
+
+      <!-- Section 1 -->
+      <div class="policy-section">
+        <h2><span class="num">1</span> Introduction</h2>
+        <p>
+          RootNet ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (collectively, the "Service").
+        </p>
+        <p>
+          RootNet is a <strong>VLESS/V2Ray config launcher</strong> — it does not route your internet traffic. The app delivers fresh server configs that you <strong>copy</strong> or <strong>export into your own VPN client app</strong> (v2rayNG, NekoBox, Hiddify, etc.). We are designed with <strong>privacy as a foundational principle</strong> — we do not log, monitor, or store your online activity, and your traffic never passes through RootNet servers.
+        </p>
+        <p>
+          By using RootNet, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use the Service.
+        </p>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="policy-section">
+        <h2><span class="num">2</span> Information We Collect</h2>
+        <p>We collect only the minimum information necessary to provide and improve the Service:</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Data Collected</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Account Info</strong></td>
+              <td>None — RootNet v2.0 requires no account</td>
+              <td>N/A</td>
+            </tr>
+            <tr>
+              <td><strong>Device Info</strong></td>
+              <td>Android advertising ID (for ads), app version, device model</td>
+              <td>Ad serving, version gating, analytics</td>
+            </tr>
+            <tr>
+              <td><strong>Usage Data</strong></td>
+              <td>Server list requests (refresh)</td>
+              <td>Delivering fresh configs</td>
+            </tr>
+            <tr>
+              <td><strong>Payment Data</strong></td>
+              <td>N/A — RootNet is currently free</td>
+              <td>N/A</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="highlight-box">
+          <p><strong>✅ We do NOT collect:</strong> Your browsing history, DNS queries, IP addresses, content of your traffic, or any personally identifiable information beyond what is listed above. RootNet operates a <strong>strict no-logs policy</strong> — and because the app never tunnels your traffic, there is nothing to log.</p>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="policy-section">
+        <h2><span class="num">3</span> How We Use Your Information</h2>
+        <p>We use the collected information for the following purposes:</p>
+        <ul>
+          <li><strong>To Provide the Service</strong> — Fetch and display the server config list, and hand configs to your installed client app.</li>
+          <li><strong>To Serve Ads</strong> — Show a picture ad (interstitial) on every third config export, a rewarded video before refreshing the list, and a banner on the config list. Ads are served by Adivery (the only ad network in the app). Ad personalization is controlled by the ad network; you can opt out of ad personalization in your device settings.</li>
+          <li><strong>To Ensure Security</strong> — Check app version compatibility, enforce rate limits, and detect replay attacks.</li>
+          <li><strong>To Deliver Updates</strong> — A version-gate check at app start tells you when a newer build is required. We do not send marketing emails.</li>
+          <li><strong>To Improve the Service</strong> — Analyze aggregate usage patterns to optimize server selection and app performance.</li>
+        </ul>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="policy-section">
+        <h2><span class="num">4</span> Data Sharing &amp; Third Parties</h2>
+        <p>We do not sell, trade, or rent your personal information. We may share data only with trusted third-party service providers who help us operate the Service:</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Service</th>
+              <th>Data Shared</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Supabase</strong></td>
+              <td>Database</td>
+              <td>Server config list + scrape timestamps (public reads only; no accounts)</td>
+            </tr>
+            <tr>
+              <td><strong>Adivery</strong></td>
+              <td>Ads (interstitial, rewarded video, banner)</td>
+              <td>Android advertising ID, device info, ad interaction data</td>
+            </tr>
+            <tr>
+              <td><strong>Cloudflare</strong></td>
+              <td>Edge functions (Workers), CDN (Pages)</td>
+              <td>IP address (temporarily for request routing), request metadata</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          Each provider is contractually bound to use your data only as necessary to provide their service and to maintain appropriate security measures. Adivery's SDK data handling is governed by its <a href="https://docs.adivery.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.
+        </p>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="policy-section">
+        <h2><span class="num">5</span> Data Security</h2>
+        <p>
+          We implement industry-standard security measures to protect your data:
+        </p>
+        <ul>
+          <li><strong>Encryption in Transit</strong> — All communication between the app, our API (Cloudflare Workers), and Supabase is encrypted via TLS 1.3.</li>
+          <li><strong>No Traffic Tunneling</strong> — RootNet never routes your internet traffic; configs are handed to the VPN client app you already use, so there is nothing to log or monitor.</li>
+          <li><strong>No Accounts</strong> — The app is fully public; there are no credentials, sessions, or JWT tokens to compromise.</li>
+          <li><strong>Rate Limiting &amp; Replay Protection</strong> — Our API enforces strict rate limits and request deduplication to prevent abuse.</li>
+          <li><strong>No Client-Side Secrets</strong> — Sensitive data (VLESS server configs, service keys) are never stored in the app; they are fetched on-demand from our secured API.</li>
+        </ul>
+        <p>
+          While we strive to protect your data, no method of electronic storage or transmission is 100% secure. We cannot guarantee absolute security.
+        </p>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="policy-section">
+        <h2><span class="num">6</span> Data Retention</h2>
+        <p>
+          We retain your personal information only as long as necessary to fulfill the purposes described in this policy:
+        </p>
+        <ul>
+          <li><strong>Server config list</strong> — Publicly served from our database; a copy is cached on your device (SharedPreferences) so the list loads instantly and is refreshed on demand. The cache is removed when you clear app data or uninstall.</li>
+          <li><strong>Scrape timestamps</strong> — The time each config was scraped is stored with the config so you can see how fresh a link is.</li>
+          <li><strong>Advertising data</strong> — Governed by Adivery's retention policies.</li>
+        </ul>
+        <p>
+          We do not hold any account or session data to delete — if you have questions about the data we hold, contact us at the email below.
+        </p>
+      </div>
+
+      <!-- Section 7 -->
+      <div class="policy-section">
+        <h2><span class="num">7</span> Your Rights &amp; Choices</h2>
+        <p>Depending on your jurisdiction, you may have the following rights regarding your personal data:</p>
+        <ul>
+          <li><strong>Access</strong> — Request a copy of the personal data we hold about you.</li>
+          <li><strong>Correction</strong> — Request correction of inaccurate or incomplete data.</li>
+          <li><strong>Deletion</strong> — Request deletion of your account and associated data ("right to be forgotten").</li>
+          <li><strong>Objection</strong> — Object to the processing of your data for specific purposes (e.g., ad personalization).</li>
+          <li><strong>Data Portability</strong> — Request a copy of your data in a machine-readable format.</li>
+          <li><strong>Withdraw Consent</strong> — Withdraw consent at any time where processing is based on consent.</li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact us at the email address below. We will respond within 30 days.
+        </p>
+        <div class="highlight-box">
+          <p><strong>Ad Personalization Opt-Out:</strong> You can opt out of personalized advertising in your device settings: <em>Settings → Google → Ads → Opt out of Ads Personalization</em>. This will still show ads, but they won't be personalized based on your interests.</p>
+        </div>
+      </div>
+
+      <!-- Section 8 -->
+      <div class="policy-section">
+        <h2><span class="num">8</span> Children's Privacy</h2>
+        <p>
+          RootNet is not intended for use by individuals under the age of 13 (or the applicable age of consent in your jurisdiction). We do not knowingly collect personal information from children. If we become aware that a child has provided us with personal data, we will delete it promptly. If you believe a child has provided us with personal data, please contact us.
+        </p>
+      </div>
+
+      <!-- Section 9 -->
+      <div class="policy-section">
+        <h2><span class="num">9</span> International Data Transfers</h2>
+        <p>
+          Your information may be transferred to and processed in countries where our third-party service providers operate (including the United States and the European Union). We ensure appropriate safeguards are in place through standard contractual clauses and data processing agreements with our providers.
+        </p>
+        <p>
+          By using RootNet, you consent to the transfer of your information to countries that may have different data protection laws than your country of residence.
+        </p>
+      </div>
+
+      <!-- Section 10 -->
+      <div class="policy-section">
+        <h2><span class="num">10</span> Changes to This Policy</h2>
+        <p>
+          We may update this Privacy Policy from time to time. We will notify you of material changes by:
+        </p>
+        <ul>
+          <li>Posting the new policy on this page with an updated "Last updated" date</li>
+          <li>Displaying a notice within the app upon next launch</li>
+          <li>Sending an email notification (for significant changes)</li>
+        </ul>
+        <p>
+          We encourage you to review this Privacy Policy periodically. Continued use of the Service after changes constitutes acceptance of the updated policy.
+        </p>
+      </div>
+
+      <!-- Section 11 -->
+      <div class="policy-section">
+        <h2><span class="num">11</span> Contact Us</h2>
+        <p>
+          If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
+        </p>
+        <ul>
+          <li><strong>Telegram:</strong> <a href="https://t.me/Vless_hub_bot" target="_blank" rel="noopener">@Vless_hub_bot</a></li>
+          <li><strong>Website:</strong> <a href="https://chobgroup.pages.dev/rootnet.html" target="_blank" rel="noopener">https://chobgroup.pages.dev</a></li>
+        </ul>
+        <p>
+          We aim to respond to all inquiries within 48 hours.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <p>© 2026 RootNet. Built with ❤️ for privacy. All traffic encrypted.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

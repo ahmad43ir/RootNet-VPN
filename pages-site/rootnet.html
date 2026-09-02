@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RootNet — Configs for Your VPN. Rooted in Privacy.</title>
+  <meta name="description" content="RootNet — fresh VLESS/V2Ray configs. Copy them or export them into your favorite client app (v2rayNG, NekoBox, Hiddify). Download now." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%2339FF14' stroke-width='2'/><circle cx='50' cy='50' r='4' fill='%2339FF14'/><line x1='50' y1='50' x2='50' y2='10' stroke='%2339FF14' stroke-width='1.5' opacity='0.4'/><line x1='50' y1='50' x2='85' y2='50' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/><line x1='50' y1='50' x2='22' y2='76' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/></svg>" />
+
+  <style>
+    /* ─── RESET & BASE ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0B1A12;
+      color: #EAEAEA;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── ANIMATED BACKGROUND ─── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(57, 255, 20, 0.06), transparent 70%);
+      top: -200px;
+      right: -200px;
+      z-index: 0;
+      animation: glowPulse 4s ease-in-out infinite alternate;
+    }
+    .bg-glow-2 {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 255, 102, 0.04), transparent 70%);
+      bottom: -150px;
+      left: -150px;
+      z-index: 0;
+      animation: glowPulse 6s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes glowPulse {
+      0% { opacity: 0.5; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ─── LAYOUT ─── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.08);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid rgba(57, 255, 20, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .logo-icon::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #39FF14;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #39FF14;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .logo-text span { color: #39FF14; }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    .nav-links a {
+      font-size: 14px;
+      color: rgba(234, 234, 234, 0.6);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #39FF14; }
+    .btn-download-nav {
+      background: #39FF14;
+      color: #0B1A12 !important;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: box-shadow 0.3s;
+    }
+    .btn-download-nav:hover {
+      box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      background: rgba(57, 255, 20, 0.06);
+      font-size: 12px;
+      color: #39FF14;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #39FF14, #00FF66);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: rgba(234, 234, 234, 0.6);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: #39FF14;
+      color: #0B1A12;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      transition: box-shadow 0.3s, transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 40px rgba(57, 255, 20, 0.35);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #EAEAEA;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .btn-secondary:hover {
+      border-color: #39FF14;
+      background: rgba(57, 255, 20, 0.06);
+    }
+
+    /* ─── ANIMATED LOGO (CSS) ─── */
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 32px;
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .hero-logo-circle {
+      width: 80px;
+      height: 80px;
+      border: 2px solid rgba(57, 255, 20, 0.3);
+      border-radius: 50%;
+      position: absolute;
+      animation: spin 20s linear infinite;
+    }
+    .hero-logo-circle-inner {
+      width: 56px;
+      height: 56px;
+      border: 1px solid rgba(57, 255, 20, 0.1);
+      border-radius: 50%;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+    }
+    .hero-logo-dot {
+      width: 8px;
+      height: 8px;
+      background: #39FF14;
+      border-radius: 50%;
+      position: absolute;
+      top: 36px;
+      left: 36px;
+      box-shadow: 0 0 15px #39FF14;
+    }
+    .hero-logo-orbit {
+      width: 10px;
+      height: 10px;
+      background: #00FF66;
+      border-radius: 50%;
+      position: absolute;
+      top: -4px;
+      left: 35px;
+      box-shadow: 0 0 12px #00FF66;
+      animation: orbit 4s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes orbit {
+      0% { transform: rotate(0deg) translateX(42px) rotate(0deg); }
+      100% { transform: rotate(360deg) translateX(42px) rotate(-360deg); }
+    }
+
+    /* ─── FEATURES ─── */
+    .section {
+      padding: 80px 0;
+    }
+    .section-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .section-sub {
+      color: rgba(234, 234, 234, 0.5);
+      text-align: center;
+      font-size: 16px;
+      max-width: 500px;
+      margin: 0 auto 60px;
+      line-height: 1.6;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: rgba(15, 30, 20, 0.6);
+      border: 1px solid rgba(57, 255, 20, 0.08);
+      border-radius: 16px;
+      padding: 32px 24px;
+      transition: border-color 0.3s, transform 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    .feature-card:hover {
+      border-color: rgba(57, 255, 20, 0.2);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(57, 255, 20, 0.08);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: rgba(234, 234, 234, 0.5);
+      line-height: 1.6;
+    }
+
+    /* ─── SERVERS ─── */
+    .servers-section {
+      padding: 80px 0;
+    }
+    .server-list {
+      display: grid;
+      gap: 12px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .server-card {
+      background: rgba(15, 30, 20, 0.5);
+      border: 1px solid rgba(57, 255, 20, 0.08);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.3s;
+    }
+    .server-card:hover {
+      border-color: rgba(57, 255, 20, 0.2);
+    }
+    .server-flag {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .server-info {
+      flex: 1;
+    }
+    .server-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .server-country {
+      font-size: 13px;
+      color: rgba(234, 234, 234, 0.4);
+    }
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(57, 255, 20, 0.3);
+      transition: background 0.3s;
+    }
+    .status-dot.online {
+      background: #39FF14;
+      box-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .status-dot.offline {
+      background: #ff4444;
+    }
+    .server-latency {
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.4);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    /* ─── DOWNLOAD ─── */
+    .download-section {
+      padding: 80px 0;
+      text-align: center;
+    }
+    .download-card {
+      background: linear-gradient(135deg, rgba(57, 255, 20, 0.06), rgba(0, 255, 102, 0.03));
+      border: 1px solid rgba(57, 255, 20, 0.15);
+      border-radius: 20px;
+      padding: 48px 32px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .download-card h3 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .download-card p {
+      color: rgba(234, 234, 234, 0.5);
+      font-size: 14px;
+      margin-bottom: 28px;
+    }
+    .download-card .btn-primary {
+      display: inline-flex;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid rgba(57, 255, 20, 0.06);
+      padding: 32px 0;
+      text-align: center;
+    }
+    footer .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+    footer .footer-links a {
+      font-size: 13px;
+      color: rgba(234, 234, 234, 0.4);
+      transition: color 0.2s;
+    }
+    footer .footer-links a:hover {
+      color: #39FF14;
+    }
+    footer p {
+      font-size: 13px;
+      color: rgba(234, 234, 234, 0.3);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero { padding: 60px 0 40px; }
+      .hero h1 { font-size: 36px; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+      .hero-buttons { flex-direction: column; }
+    }
+
+    /* ─── LOADING STATE ─── */
+    .loading-text {
+      text-align: center;
+      color: rgba(234, 234, 234, 0.3);
+      font-size: 14px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── BACKGROUND ─── -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- ─── NAV ─── -->
+  <div class="container">
+    <nav>
+      <div class="logo">
+        <div class="logo-icon"><span class="logo-icon"></span></div>
+        <div class="logo-text">Root<span>Net</span></div>
+      </div>
+      <div class="nav-links">
+        <a href="/">← Chob Group</a>
+        <a href="#features">Features</a>
+        <a href="#servers">Servers</a>
+        <a href="#download" class="btn-download-nav">Download</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-logo">
+        <div class="hero-logo-circle">
+          <div class="hero-logo-orbit"></div>
+        </div>
+        <div class="hero-logo-circle-inner"></div>
+        <div class="hero-logo-dot"></div>
+      </div>
+      <div class="hero-badge">⚡ v2.0 · NOW AVAILABLE · A Chob Group project</div>
+      <h1>Your VPN.<br><span>Your Client.</span></h1>
+      <p>
+        RootNet hands you fresh VLESS/V2Ray configs — copy them or export them
+        straight into the client app you already use. No account, no built-in tunnel.
+      </p>
+      <div class="hero-buttons">
+        <a href="#download" class="btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1A12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Now
+        </a>
+        <a href="#servers" class="btn-secondary">View Servers</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FEATURES ─── -->
+  <section class="section" id="features">
+    <div class="container">
+      <h2 class="section-title">Why RootNet?</h2>
+      <p class="section-sub">Fresh configs, your favorite client. Zero compromises.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>Works With Your Client</h3>
+          <p>Copy or export configs straight into v2rayNG, NekoBox, Hiddify or any VLESS/V2Ray client you already use.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Zero Logs</h3>
+          <p>RootNet never sees your traffic — the connection runs entirely in your own client app.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Fresh Servers</h3>
+          <p>The global node list refreshes live from Supabase — new servers appear without updating the app.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>No Account Needed</h3>
+          <p>Open the app, pick a server, copy or export. No signup, no premium tiers, no tracking.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>One-Tap Export</h3>
+          <p>Tap Export — a short video ad plays — and the config opens in your default VPN app automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Real Latency</h3>
+          <p>Live TCP ping per server helps you always pick the fastest node before you export.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── SERVERS ─── -->
+  <section class="servers-section" id="servers">
+    <div class="container">
+      <h2 class="section-title">Our Servers</h2>
+      <p class="section-sub">Freshly updated nodes — pick one, copy it, or export it to your client.</p>
+      <div class="server-list" id="serverList">
+        <div class="loading-text">Loading server status...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── DOWNLOAD ─── -->
+  <section class="download-section" id="download">
+    <div class="container">
+      <div class="download-card">
+        <div style="font-size:48px;margin-bottom:16px;">📲</div>
+        <h3>Get RootNet</h3>
+        <p>Download the APK, pick a server, and open the config in the VPN client you already trust.</p>
+        <a href="/downloads/app-release.apk" class="btn-primary" id="downloadBtn" download="RootNet-v2.1.0.apk">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1A12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download APK v2.1.0
+        </a>
+        <!-- ℹ️  APK is served from this site (Cloudflare Pages) at /downloads/app-release.apk —
+             well under the 25 MiB per-file cap. To ship a new version: rebuild the signed
+             release APK, copy it to pages-site/downloads/app-release.apk, redeploy:
+             npx wrangler pages deploy pages-site --project-name chobgroup --branch main
+             and bump the version strings on this page.
+             To publish on Google Play: build with the real keystore, upload to Play Console. -->
+        <p style="margin-top: 20px; font-size: 12px; color: rgba(234,234,234,0.3);">
+          v2.1.0 · Android 6.0+ · 1.8 MB · Requires a VLESS client app (v2rayNG, NekoBox, Hiddify…)
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="/">← Chob Group</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <p>© 2026 RootNet · A Chob Group project · Built with ❤️ for privacy</p>
+      <p style="margin-top:6px; font-size:12px; color: rgba(234,234,234,0.25);">v2.0 — config launcher. Traffic never passes through RootNet servers.</p>
+    </div>
+  </footer>
+
+  <!-- ─── JAVASCRIPT ─── -->
+  <script>
+    // ─── LOAD SERVER LIST ───
+    // Fetches public server names from the Worker API (no IPs/configs exposed)
+    async function loadServers() {
+      const listEl = document.getElementById('serverList');
+      const workerUrl = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api/public/servers';
+
+      try {
+        const response = await fetch(workerUrl);
+        if (!response.ok) throw new Error('API unavailable');
+
+        const data = await response.json();
+        const servers = data.servers || [];
+
+        if (servers.length === 0) throw new Error('Empty list');
+
+        listEl.innerHTML = '';
+        servers.forEach((server) => {
+          const card = document.createElement('div');
+          card.className = 'server-card';
+          card.innerHTML = `
+            <div class="server-flag">${server.flag}</div>
+            <div class="server-info">
+              <div class="server-name">${server.name}</div>
+              <div class="server-country">${server.country}</div>
+            </div>
+            <div class="server-status">
+              <span class="status-dot online"></span>
+              <span>Online</span>
+            </div>
+          `;
+          listEl.appendChild(card);
+        });
+      } catch (e) {
+        // Fallback: show static list if API is unreachable
+        listEl.innerHTML = '';
+        const fallbackServers = [
+          { name: 'Oak', flag: '🌐', country: 'Global' },
+          { name: 'Pine', flag: '🌐', country: 'Global' },
+          { name: 'Redwood', flag: '🇺🇸', country: 'US' },
+          { name: 'Cedar', flag: '🌐', country: 'Global' },
+          { name: 'Birch', flag: '🌍', country: 'CDN' },
+        ];
+        fallbackServers.forEach((s) => {
+          listEl.innerHTML += `
+            <div class="server-card">
+              <div class="server-flag">${s.flag}</div>
+              <div class="server-info">
+                <div class="server-name">${s.name}</div>
+                <div class="server-country">${s.country}</div>
+              </div>
+              <div class="server-status">
+                <span class="status-dot online"></span>
+                <span>Online</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // ─── SMOOTH SCROLL ───
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // ─── INIT ───
+    document.addEventListener('DOMContentLoaded', () => {
+      loadServers();
+    });
+  </script>
+
+</body>
+</html>

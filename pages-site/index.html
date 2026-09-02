@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chob Group — AI-Crafted Apps on Free Infrastructure</title>
+  <meta name="description" content="Chob Group builds apps with AI on free services like Cloudflare, Supabase, and Netlify — for personal and small group use." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%238888FF' stroke-width='2'/><text x='50' y='62' font-size='40' text-anchor='middle' fill='%238888FF'>C</text></svg>" />
+
+  <style>
+    /* ─── RESET ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #070B14;
+      color: #E0E0E0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── BG ─── */
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(136, 136, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(136, 136, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+    .bg-glow-1 {
+      position: fixed; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(136, 136, 255, 0.06), transparent 70%);
+      top: -200px; right: -200px; z-index: 0;
+      animation: glowPulse 4s ease-in-out infinite alternate;
+    }
+    .bg-glow-2 {
+      position: fixed; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 200, 255, 0.04), transparent 70%);
+      bottom: -150px; left: -150px; z-index: 0;
+      animation: glowPulse 6s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes glowPulse {
+      0% { opacity: 0.5; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ─── LAYOUT ─── */
+    .container { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0; border-bottom: 1px solid rgba(136, 136, 255, 0.08);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #8888FF, #66BBFF);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; color: #070B14;
+    }
+    .logo-text { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    .logo-text span { background: linear-gradient(135deg, #8888FF, #66BBFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { font-size: 14px; color: rgba(224, 224, 224, 0.5); transition: color 0.2s; }
+    .nav-links a:hover { color: #8888FF; }
+
+    /* ─── HERO ─── */
+    .hero { padding: 100px 0 80px; text-align: center; }
+    .hero-badge {
+      display: inline-block; padding: 6px 16px; border-radius: 20px;
+      border: 1px solid rgba(136, 136, 255, 0.2);
+      background: rgba(136, 136, 255, 0.06);
+      font-size: 12px; color: #8888FF; letter-spacing: 1px; margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 60px); font-weight: 700; line-height: 1.15; margin-bottom: 20px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #8888FF, #66BBFF);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero p {
+      font-size: 17px; color: rgba(224, 224, 224, 0.5);
+      max-width: 540px; margin: 0 auto 40px; line-height: 1.7;
+    }
+
+    /* ─── SECTION ─── */
+    .section { padding: 80px 0; }
+    .section-title { font-size: 28px; font-weight: 700; margin-bottom: 40px; text-align: center; }
+    .section-title span { color: #8888FF; }
+
+    /* ─── ABOUT ─── */
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+      max-width: 800px; margin: 0 auto;
+    }
+    .about-card {
+      background: rgba(10, 15, 30, 0.6); border: 1px solid rgba(136, 136, 255, 0.08);
+      border-radius: 16px; padding: 32px 28px; backdrop-filter: blur(10px);
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .about-card:hover { border-color: rgba(136, 136, 255, 0.2); transform: translateY(-3px); }
+    .about-card .icon { font-size: 32px; margin-bottom: 14px; }
+    .about-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .about-card p { font-size: 14px; color: rgba(224, 224, 224, 0.5); line-height: 1.7; }
+    .tech-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .tech-tag {
+      padding: 4px 12px; border-radius: 8px;
+      background: rgba(136, 136, 255, 0.08);
+      border: 1px solid rgba(136, 136, 255, 0.12);
+      font-size: 12px; color: rgba(224, 224, 224, 0.6);
+    }
+
+    /* ─── PROJECTS (short ads) ─── */
+    .projects-grid { display: grid; gap: 16px; max-width: 720px; margin: 0 auto; }
+    .ad-card {
+      display: flex; align-items: center; gap: 20px;
+      background: rgba(10, 15, 30, 0.6); border: 1px solid rgba(136, 136, 255, 0.1);
+      border-radius: 16px; padding: 18px 22px; backdrop-filter: blur(10px);
+      transition: border-color 0.3s, transform 0.3s, background 0.3s;
+    }
+    .ad-card:hover { border-color: rgba(136, 136, 255, 0.35); transform: translateX(4px); background: rgba(10, 15, 30, 0.8); }
+    .ad-icon {
+      width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .ad-icon.rootnet { background: rgba(57, 255, 20, 0.1); }
+    .ad-icon.proxybox { background: rgba(76, 255, 136, 0.1); }
+    .ad-icon.geoip { background: rgba(255, 200, 50, 0.1); }
+    .ad-icon.geopoint { background: rgba(100, 200, 255, 0.1); }
+    .ad-body { flex: 1; min-width: 0; }
+    .ad-body h3 { font-size: 17px; font-weight: 700; }
+    .ad-body p { font-size: 13px; color: rgba(224, 224, 224, 0.5); margin-top: 3px; line-height: 1.5; }
+    .ad-cta {
+      flex-shrink: 0; font-size: 13px; font-weight: 700; color: #8888FF;
+      white-space: nowrap; transition: transform 0.3s;
+    }
+    .ad-card:hover .ad-cta { transform: translateX(3px); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid rgba(136, 136, 255, 0.06);
+      padding: 32px 0; text-align: center;
+    }
+    footer p { font-size: 13px; color: rgba(224, 224, 224, 0.3); }
+    footer .footer-heart { color: #FF6B8A; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero { padding: 60px 0 40px; }
+      .hero h1 { font-size: 32px; }
+      .about-grid { grid-template-columns: 1fr; }
+      .project-card { flex-direction: column; }
+      .project-icon { width: 48px; height: 48px; font-size: 22px; }
+    }
+
+    /* ─── ANIMATIONS ─── */
+    .fade-in { opacity: 0; transform: translateY(20px); animation: fadeIn 0.6s ease-out forwards; }
+    .fade-in:nth-child(2) { animation-delay: 0.15s; }
+    .fade-in:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── BACKGROUND ─── -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- ─── NAV ─── -->
+  <div class="container">
+    <nav>
+      <div class="logo">
+        <div class="logo-mark">C</div>
+        <div class="logo-text">Chob<span>Group</span></div>
+      </div>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">🤖 AI + ☁️ Free Infrastructure</div>
+      <h1>We build apps with AI<br>on <span>free services</span></h1>
+      <p>
+        Cloudflare, Supabase, Netlify — we craft real, useful applications using
+        AI coding agents and the best free-tier cloud services. No bloat, no VC money,
+        just practical tools for personal and small-group use.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── ABOUT ─── -->
+  <section class="section" id="about">
+    <div class="container">
+      <h2 class="section-title">What <span>We Do</span></h2>
+      <div class="about-grid">
+        <div class="about-card fade-in">
+          <div class="icon">🤖</div>
+          <h3>AI-Powered Development</h3>
+          <p>
+            We use AI coding agents to rapidly prototype, build, and deploy full-stack
+            applications. From native Android apps to Cloudflare Workers — AI handles
+            the heavy lifting while we guide the vision.
+          </p>
+          <div class="tech-tags">
+            <span class="tech-tag">Claude</span>
+            <span class="tech-tag">GPT</span>
+            <span class="tech-tag">Cursor</span>
+          </div>
+        </div>
+        <div class="about-card fade-in">
+          <div class="icon">☁️</div>
+          <h3>Free-Tier Infrastructure</h3>
+          <p>
+            Every project runs entirely on free services. Cloudflare Workers for APIs,
+            Supabase for databases and auth, Firebase for push notifications and
+            authentication, Cloudflare Pages and Netlify for hosting.
+            Production-ready at zero cost.
+          </p>
+          <div class="tech-tags">
+            <span class="tech-tag">Cloudflare</span>
+            <span class="tech-tag">Supabase</span>
+            <span class="tech-tag">Firebase</span>
+            <span class="tech-tag">Netlify</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PROJECTS (short ads) ─── -->
+  <section class="section" id="projects">
+    <div class="container">
+      <h2 class="section-title">Our <span>Projects</span></h2>
+      <p class="section-sub" style="font-size:14px; margin-bottom:32px;">Each tool has its own dedicated page — tap through to learn more or download.</p>
+
+      <div class="projects-grid">
+
+        <a href="/rootnet.html" class="ad-card fade-in">
+          <div class="ad-icon rootnet">🌿</div>
+          <div class="ad-body">
+            <h3>RootNet</h3>
+            <p>Fresh VLESS/V2Ray configs for your VPN client — copy or export, no account.</p>
+          </div>
+          <div class="ad-cta">Learn More →</div>
+        </a>
+
+        <a href="/proxybox.html" class="ad-card fade-in">
+          <div class="ad-icon proxybox">📦</div>
+          <div class="ad-body">
+            <h3>ProxyBox</h3>
+            <p>Free MTProto proxies for Telegram — 10 picks per batch, tap to open.</p>
+          </div>
+          <div class="ad-cta">Learn More →</div>
+        </a>
+
+        <a href="/geoip.html" class="ad-card fade-in">
+          <div class="ad-icon geoip">🌍</div>
+          <div class="ad-body">
+            <h3>GeoIP</h3>
+            <p>Free IP geolocation API — pass an IP, get the country and flag.</p>
+          </div>
+          <div class="ad-cta">Learn More →</div>
+        </a>
+
+        <a href="https://iran-gis.pages.dev" class="ad-card fade-in">
+          <div class="ad-icon geopoint">🗺️</div>
+          <div class="ad-body">
+            <h3>GeoPoint Studio</h3>
+            <p>UTM WGS84 points to Excel / KML / KMZ — right in the browser.</p>
+          </div>
+          <div class="ad-cta">Open App →</div>
+        </a>
+
+        <a href="https://iran-elections.pages.dev" class="ad-card fade-in">
+          <div class="ad-icon" style="background: rgba(136, 136, 255, 0.1);">🗳️</div>
+          <div class="ad-body">
+            <h3>Iran Elections</h3>
+            <p>Comprehensive Iranian election information platform — candidates, elections, and user engagement.</p>
+          </div>
+          <div class="ad-cta">Open App →</div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="container">
+      <p>Built with <span class="footer-heart">❤️</span> and AI · Powered by free-tier cloud infrastructure</p>
+      <p style="margin-top:6px; font-size:12px;">© 2026 Chob Group</p>
+    </div>
+  </footer>
+
+  <!-- ─── SMOOTH SCROLL ─── -->
+  <script>
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+
+</body>
+</html>
