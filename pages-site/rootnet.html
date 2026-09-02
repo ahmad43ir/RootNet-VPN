@@ -59,7 +59,6 @@
       0% { transform: translate(0, 0); }
       100% { transform: translate(60px, 60px); }
     }
-
     .bg-glow {
       position: fixed;
       width: 600px;
@@ -135,7 +134,7 @@
     .logo-text span { color: #39FF14; }
     .nav-links {
       display: flex;
-      gap: 32px;
+      gap: 28px;
       align-items: center;
     }
     .nav-links a {
@@ -155,6 +154,41 @@
     }
     .btn-download-nav:hover {
       box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
+    }
+
+    /* ─── BUTTONS (single definition) ─── */
+    .btn-primary {
+      background: #39FF14;
+      color: #0B1A12;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      transition: box-shadow 0.3s, transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 40px rgba(57, 255, 20, 0.35);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #EAEAEA;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      transition: border-color 0.3s, background 0.3s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-secondary:hover {
+      border-color: #39FF14;
+      background: rgba(57, 255, 20, 0.06);
     }
 
     /* ─── HERO ─── */
@@ -192,14 +226,8 @@
       margin: 0 auto 40px;
       line-height: 1.6;
     }
-    .hero-buttons {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
     .hero-fa {
-      margin: 24px auto 0;
+      margin: -20px auto 36px;
       max-width: 560px;
       direction: rtl;
       font-size: 15px;
@@ -207,6 +235,12 @@
       color: rgba(234, 234, 234, 0.45);
     }
     .hero-fa strong { color: #39FF14; font-weight: 600; }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
 
     /* ─── LANGUAGE TOGGLE ─── */
     .lang-toggle {
@@ -234,99 +268,10 @@
       background: #39FF14;
       color: #0B1A12;
     }
-    /* Language visibility states (default: both shown) */
     body[data-lang="en"] .lang-fa,
     body[data-lang="fa"] .lang-en { display: none !important; }
     @media (max-width: 768px) {
       .lang-toggle { margin-left: 0; }
-    }
-
-    /* ─── PERSIAN SECTION ─── */
-    .fa-section {
-      padding: 80px 0;
-    }
-    .fa-card {
-      background: rgba(15, 30, 20, 0.6);
-      border: 1px solid rgba(57, 255, 20, 0.1);
-      border-radius: 20px;
-      padding: 40px 32px;
-      max-width: 760px;
-      margin: 0 auto;
-      direction: rtl;
-      text-align: right;
-      backdrop-filter: blur(10px);
-    }
-    .fa-card h2 {
-      font-size: 26px;
-      font-weight: 700;
-      color: #39FF14;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    .fa-card p, .fa-card li {
-      font-size: 15px;
-      line-height: 1.9;
-      color: rgba(234, 234, 234, 0.65);
-    }
-    .fa-card p { margin-bottom: 16px; }
-    .fa-card ul {
-      list-style: none;
-      margin-bottom: 20px;
-    }
-    .fa-card li {
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(57, 255, 20, 0.06);
-    }
-    .fa-card li::before {
-      content: '◂';
-      color: #39FF14;
-      margin-left: 10px;
-    }
-    .fa-card li:last-child { border-bottom: none; }
-    .fa-card .fa-steps {
-      background: rgba(57, 255, 20, 0.05);
-      border: 1px solid rgba(57, 255, 20, 0.15);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-    }
-    .fa-card .fa-steps strong { color: #39FF14; }
-    .fa-cta { text-align: center; margin-bottom: 12px; }
-    .fa-cta .btn-primary { font-size: 15px; padding: 14px 32px; }
-    .fa-note {
-      text-align: center;
-      font-size: 12px;
-      color: rgba(234, 234, 234, 0.35);
-    }
-    .btn-primary {
-      background: #39FF14;
-      color: #0B1A12;
-      padding: 16px 40px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: 0.5px;
-      transition: box-shadow 0.3s, transform 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn-primary:hover {
-      box-shadow: 0 0 40px rgba(57, 255, 20, 0.35);
-      transform: translateY(-2px);
-    }
-    .btn-secondary {
-      border: 1px solid rgba(57, 255, 20, 0.3);
-      color: #EAEAEA;
-      padding: 16px 40px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 16px;
-      transition: border-color 0.3s, background 0.3s;
-    }
-    .btn-secondary:hover {
-      border-color: #39FF14;
-      background: rgba(57, 255, 20, 0.06);
     }
 
     /* ─── ANIMATED LOGO (CSS) ─── */
@@ -388,10 +333,8 @@
       100% { transform: rotate(360deg) translateX(42px) rotate(-360deg); }
     }
 
-    /* ─── FEATURES ─── */
-    .section {
-      padding: 80px 0;
-    }
+    /* ─── SECTIONS ─── */
+    .section { padding: 80px 0; }
     .section-title {
       font-size: 32px;
       font-weight: 700;
@@ -406,6 +349,8 @@
       margin: 0 auto 60px;
       line-height: 1.6;
     }
+
+    /* ─── FEATURES ─── */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -445,9 +390,6 @@
     }
 
     /* ─── SERVERS ─── */
-    .servers-section {
-      padding: 80px 0;
-    }
     .server-list {
       display: grid;
       gap: 12px;
@@ -471,54 +413,58 @@
       font-size: 28px;
       line-height: 1;
     }
-    .server-info {
-      flex: 1;
-    }
+    .server-info { flex: 1; min-width: 0; }
     .server-name {
       font-weight: 600;
       font-size: 16px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .server-country {
       font-size: 13px;
       color: rgba(234, 234, 234, 0.4);
     }
-    .server-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .server-count {
       font-size: 12px;
+      color: rgba(57, 255, 20, 0.6);
     }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(57, 255, 20, 0.3);
-      transition: background 0.3s;
-    }
-    .status-dot.online {
-      background: #39FF14;
-      box-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
-      animation: pulse-dot 2s ease-in-out infinite;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    .status-dot.offline {
-      background: #ff4444;
-    }
-    .server-latency {
+    .server-note {
+      text-align: center;
       font-size: 12px;
-      color: rgba(234, 234, 234, 0.4);
-      min-width: 60px;
-      text-align: right;
+      color: rgba(234, 234, 234, 0.3);
+      margin-top: 20px;
+    }
+    .loading-text {
+      text-align: center;
+      color: rgba(234, 234, 234, 0.3);
+      font-size: 14px;
+      padding: 20px;
+    }
+    .error-text {
+      text-align: center;
+      color: rgba(255, 100, 100, 0.5);
+      font-size: 14px;
+      padding: 20px;
+    }
+    .retry-btn {
+      background: transparent;
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      color: #39FF14;
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 12px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .retry-btn:hover {
+      background: rgba(57, 255, 20, 0.06);
+      border-color: #39FF14;
     }
 
     /* ─── DOWNLOAD ─── */
-    .download-section {
-      padding: 80px 0;
-      text-align: center;
-    }
     .download-card {
       background: linear-gradient(135deg, rgba(57, 255, 20, 0.06), rgba(0, 255, 102, 0.03));
       border: 1px solid rgba(57, 255, 20, 0.15);
@@ -526,6 +472,7 @@
       padding: 48px 32px;
       max-width: 500px;
       margin: 0 auto;
+      text-align: center;
     }
     .download-card h3 {
       font-size: 24px;
@@ -536,9 +483,69 @@
       font-size: 14px;
       margin-bottom: 28px;
     }
-    .download-card .btn-primary {
-      display: inline-flex;
+    .download-card .btn-primary { display: inline-flex; }
+    .download-meta {
+      margin-top: 20px;
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.3);
     }
+
+    /* ─── PERSIAN SECTION ─── */
+    .fa-section { padding: 80px 0; }
+    .fa-card {
+      background: rgba(15, 30, 20, 0.6);
+      border: 1px solid rgba(57, 255, 20, 0.1);
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 760px;
+      margin: 0 auto;
+      direction: rtl;
+      text-align: right;
+      backdrop-filter: blur(10px);
+    }
+    .fa-card h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #39FF14;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .fa-card p, .fa-card li {
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(234, 234, 234, 0.65);
+    }
+    .fa-card p { margin-bottom: 16px; }
+    .fa-card ul {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+    .fa-card li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.06);
+    }
+    .fa-card li::before {
+      content: '◂';
+      color: #39FF14;
+      margin-left: 10px;
+    }
+    .fa-card li:last-child { border-bottom: none; }
+    .fa-card .fa-steps {
+      background: rgba(57, 255, 20, 0.05);
+      border: 1px solid rgba(57, 255, 20, 0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .fa-card .fa-steps strong { color: #39FF14; }
+    .fa-cta { text-align: center; margin-bottom: 12px; }
+    .fa-cta .btn-primary { font-size: 15px; padding: 14px 32px; }
+    .fa-note {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.35);
+    }
+    .fa-note a { color: #39FF14; text-decoration: underline; }
 
     /* ─── FOOTER ─── */
     footer {
@@ -573,14 +580,6 @@
       .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
       .hero-buttons { flex-direction: column; }
     }
-
-    /* ─── LOADING STATE ─── */
-    .loading-text {
-      text-align: center;
-      color: rgba(234, 234, 234, 0.3);
-      font-size: 14px;
-      padding: 20px;
-    }
   </style>
 </head>
 <body>
@@ -594,7 +593,7 @@
   <div class="container">
     <nav>
       <div class="logo">
-        <div class="logo-icon"><span class="logo-icon"></span></div>
+        <div class="logo-icon"></div>
         <div class="logo-text">Root<span>Net</span></div>
       </div>
       <div class="nav-links">
@@ -621,7 +620,7 @@
         <div class="hero-logo-circle-inner"></div>
         <div class="hero-logo-dot"></div>
       </div>
-      <div class="hero-badge">⚡ v2.0 · NOW AVAILABLE · A Chob Group project</div>
+      <div class="hero-badge">⚡ v2.0 · A Chob Group project</div>
       <h1>Your VPN.<br><span>Your Client.</span></h1>
       <p>
         RootNet hands you fresh VLESS/V2Ray configs — copy them or export them
@@ -633,7 +632,7 @@
       </p>
       <div class="hero-buttons">
         <a href="#download" class="btn-primary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1A12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Now
         </a>
         <a href="#servers" class="btn-secondary">View Servers</a>
@@ -660,7 +659,7 @@
         <div class="feature-card">
           <div class="feature-icon">🌍</div>
           <h3>Fresh Servers</h3>
-          <p>The global node list refreshes live from Supabase — new servers appear without updating the app.</p>
+          <p>The global node list refreshes live from the RootNet API — new servers appear without updating the app.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📱</div>
@@ -670,7 +669,7 @@
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
           <h3>One-Tap Export</h3>
-          <p>Tap Export — a short video ad plays — and the config opens in your default VPN app automatically.</p>
+          <p>Tap Export and the config opens in your default VPN client automatically.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔐</div>
@@ -682,34 +681,29 @@
   </section>
 
   <!-- ─── SERVERS ─── -->
-  <section class="servers-section" id="servers">
+  <section class="section" id="servers">
     <div class="container">
       <h2 class="section-title">Our Servers</h2>
-      <p class="section-sub">Freshly updated nodes — pick one, copy it, or export it to your client.</p>
+      <p class="section-sub">Freshly updated community nodes — copy one inside the app, or export it to your client.</p>
       <div class="server-list" id="serverList">
-        <div class="loading-text">Loading server status...</div>
+        <div class="loading-text" id="serverLoading">Loading servers…</div>
       </div>
+      <p class="server-note">Server list refreshes automatically. Open the app to copy or export a config.</p>
     </div>
   </section>
 
   <!-- ─── DOWNLOAD ─── -->
-  <section class="download-section" id="download">
+  <section class="section" id="download">
     <div class="container">
       <div class="download-card">
         <div style="font-size:48px;margin-bottom:16px;">📲</div>
         <h3>Get RootNet</h3>
         <p>Download the APK, pick a server, and open the config in the VPN client you already trust.</p>
         <a href="/downloads/app-release.apk" class="btn-primary" id="downloadBtn" download="RootNet-v2.1.0.apk">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1A12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download APK v2.1.0
         </a>
-        <!-- ℹ️  APK is served from this site (Cloudflare Pages) at /downloads/app-release.apk —
-             well under the 25 MiB per-file cap. To ship a new version: rebuild the signed
-             release APK, copy it to pages-site/downloads/app-release.apk, redeploy:
-             npx wrangler pages deploy pages-site --project-name chobgroup --branch main
-             and bump the version strings on this page.
-             To publish on Google Play: build with the real keystore, upload to Play Console. -->
-        <p style="margin-top: 20px; font-size: 12px; color: rgba(234,234,234,0.3);">
+        <p class="download-meta">
           v2.1.0 · Android 6.0+ · 1.8 MB · Requires a VLESS client app (v2rayNG, NekoBox, Hiddify…)
         </p>
       </div>
@@ -717,7 +711,7 @@
   </section>
 
   <!-- ─── PERSIAN (فارسی) ─── -->
-  <section class="fa-section lang-fa" id="fa">
+  <section class="fa-section lang-fa" id="fa" lang="fa" dir="rtl">
     <div class="container">
       <div class="fa-card">
         <h2>RootNet — کانفیگ‌های تازه، کلاینت خودتان</h2>
@@ -745,7 +739,7 @@
         </div>
         <p class="fa-note">
           RootNet یک اپلیکیشن اندروید است — نسخهٔ وب VlessHub (بدون نصب) هم در دسترس است:
-          <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener" style="color:#39FF14; text-decoration:underline;">vlesshub-2i2.pages.dev</a>
+          <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener">vlesshub-2i2.pages.dev</a>
         </p>
       </div>
     </div>
@@ -756,7 +750,7 @@
     <div class="container">
       <div class="footer-links">
         <a href="/">← Chob Group</a>
-        <a href="privacy.html">Privacy Policy</a>
+        <a href="/privacy">Privacy Policy</a>
       </div>
       <p>© 2026 RootNet · A Chob Group project · Built with ❤️ for privacy</p>
       <p style="margin-top:6px; font-size:12px; color: rgba(234,234,234,0.25);">v2.0 — config launcher. Traffic never passes through RootNet servers.</p>
@@ -766,94 +760,105 @@
   <!-- ─── JAVASCRIPT ─── -->
   <script>
     // ─── LOAD SERVER LIST ───
-    // Fetches public server names from the Worker API (no IPs/configs exposed)
-    async function loadServers() {
+    // Fetches public server names from the RootNet API (no IPs/configs exposed).
+    // Honest states: loading skeleton → list, or an error + retry button.
+    // No fake "Online" chips: the API exposes names only, not live status.
+    (function () {
+      const API_URL = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api/public/servers';
       const listEl = document.getElementById('serverList');
-      const workerUrl = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api/public/servers';
+      let retryBtn = null;
 
-      try {
-        const response = await fetch(workerUrl);
-        if (!response.ok) throw new Error('API unavailable');
-
-        const data = await response.json();
-        const servers = data.servers || [];
-
-        if (servers.length === 0) throw new Error('Empty list');
-
+      function skeleton(count) {
         listEl.innerHTML = '';
-        servers.forEach((server) => {
+        for (let i = 0; i < count; i++) {
           const card = document.createElement('div');
           card.className = 'server-card';
+          card.style.opacity = '0.35';
           card.innerHTML = `
-            <div class="server-flag">${server.flag}</div>
+            <div class="server-flag">🌐</div>
             <div class="server-info">
-              <div class="server-name">${server.name}</div>
-              <div class="server-country">${server.country}</div>
-            </div>
-            <div class="server-status">
-              <span class="status-dot online"></span>
-              <span>Online</span>
-            </div>
-          `;
+              <div class="server-name">·····</div>
+              <div class="server-country">···</div>
+            </div>`;
           listEl.appendChild(card);
-        });
-      } catch (e) {
-        // Fallback: show static list if API is unreachable
-        listEl.innerHTML = '';
-        const fallbackServers = [
-          { name: 'Oak', flag: '🌐', country: 'Global' },
-          { name: 'Pine', flag: '🌐', country: 'Global' },
-          { name: 'Redwood', flag: '🇺🇸', country: 'US' },
-          { name: 'Cedar', flag: '🌐', country: 'Global' },
-          { name: 'Birch', flag: '🌍', country: 'CDN' },
-        ];
-        fallbackServers.forEach((s) => {
-          listEl.innerHTML += `
-            <div class="server-card">
-              <div class="server-flag">${s.flag}</div>
-              <div class="server-info">
-                <div class="server-name">${s.name}</div>
-                <div class="server-country">${s.country}</div>
-              </div>
-              <div class="server-status">
-                <span class="status-dot online"></span>
-                <span>Online</span>
-              </div>
-            </div>
-          `;
-        });
+        }
       }
-    }
+
+      function showError(msg) {
+        listEl.innerHTML = `
+          <div class="error-text">⚠ ${msg}</div>
+          <div style="text-align:center"><button class="retry-btn" id="retryBtn">Try again</button></div>`;
+        document.getElementById('retryBtn').addEventListener('click', loadServers);
+      }
+
+      async function loadServers() {
+        skeleton(4);
+        try {
+          const response = await fetch(API_URL);
+          if (!response.ok) throw new Error('API unavailable');
+          const data = await response.json();
+          const servers = data.servers || [];
+          if (servers.length === 0) throw new Error('Empty list');
+
+          listEl.innerHTML = '';
+          const count = document.createElement('div');
+          count.className = 'server-count';
+          count.style.textAlign = 'center';
+          count.textContent = `${servers.length} community nodes available`;
+          listEl.appendChild(count);
+          servers.forEach((server) => {
+            const card = document.createElement('div');
+            card.className = 'server-card';
+            card.innerHTML = `
+              <div class="server-flag">${server.flag || '🌐'}</div>
+              <div class="server-info">
+                <div class="server-name"></div>
+                <div class="server-country"></div>
+              </div>`;
+            // textContent — never inject raw HTML from the API
+            card.querySelector('.server-name').textContent = server.name || '';
+            card.querySelector('.server-country').textContent = server.country || '';
+            listEl.appendChild(card);
+          });
+        } catch (e) {
+          showError('Could not load the server list right now.');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', loadServers);
+    })();
 
     // ─── SMOOTH SCROLL ───
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const href = this.getAttribute('href');
+        if (href === '#') return;
+        const target = document.querySelector(href);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
     });
 
     // ─── LANGUAGE TOGGLE ───
-    const LANG_KEY = 'rootnet_lang';
-    function setLang(lang) {
-      document.body.dataset.lang = lang;
-      document.querySelectorAll('[data-lang-btn]').forEach(b => {
-        b.classList.toggle('active', b.dataset.langBtn === lang);
+    (function () {
+      const LANG_KEY = 'rootnet_lang';
+      const buttons = document.querySelectorAll('[data-lang-btn]');
+      function setLang(lang) {
+        document.body.dataset.lang = lang;
+        buttons.forEach(b => {
+          b.classList.toggle('active', b.dataset.langBtn === lang);
+        });
+        try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+      }
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => setLang(btn.dataset.langBtn));
       });
-      try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
-    }
-    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
-      btn.addEventListener('click', () => setLang(btn.dataset.langBtn));
-    });
-    let savedLang = 'both';
-    try { savedLang = localStorage.getItem(LANG_KEY) || 'both'; } catch (e) {}
-    if (savedLang === 'en' || savedLang === 'fa') setLang(savedLang);
-
-    // ─── INIT ───
-    document.addEventListener('DOMContentLoaded', () => {
-      loadServers();
-    });
+      let savedLang = 'both';
+      try { savedLang = localStorage.getItem(LANG_KEY) || 'both'; } catch (e) {}
+      setLang(savedLang === 'en' || savedLang === 'fa' ? savedLang : 'both');
+    })();
   </script>
 
 </body>
