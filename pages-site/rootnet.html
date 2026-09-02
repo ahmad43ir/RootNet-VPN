@@ -183,6 +183,97 @@
       color: rgba(234, 234, 234, 0.45);
     }
     .hero-fa strong { color: #39FF14; font-weight: 600; }
+
+    /* ─── LANGUAGE TOGGLE ─── */
+    .lang-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(57, 255, 20, 0.06);
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      border-radius: 20px;
+      padding: 3px;
+      margin-left: 12px;
+    }
+    .lang-toggle button {
+      background: transparent;
+      border: none;
+      color: rgba(234, 234, 234, 0.5);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: inherit;
+    }
+    .lang-toggle button.active {
+      background: #39FF14;
+      color: #0B1A12;
+    }
+    /* Language visibility states (default: both shown) */
+    body[data-lang="en"] .lang-fa,
+    body[data-lang="fa"] .lang-en { display: none !important; }
+    @media (max-width: 768px) {
+      .lang-toggle { margin-left: 0; }
+    }
+
+    /* ─── PERSIAN SECTION ─── */
+    .fa-section {
+      padding: 80px 0;
+    }
+    .fa-card {
+      background: rgba(15, 30, 20, 0.6);
+      border: 1px solid rgba(57, 255, 20, 0.1);
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 760px;
+      margin: 0 auto;
+      direction: rtl;
+      text-align: right;
+      backdrop-filter: blur(10px);
+    }
+    .fa-card h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #39FF14;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .fa-card p, .fa-card li {
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(234, 234, 234, 0.65);
+    }
+    .fa-card p { margin-bottom: 16px; }
+    .fa-card ul {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+    .fa-card li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.06);
+    }
+    .fa-card li::before {
+      content: '◂';
+      color: #39FF14;
+      margin-left: 10px;
+    }
+    .fa-card li:last-child { border-bottom: none; }
+    .fa-card .fa-steps {
+      background: rgba(57, 255, 20, 0.05);
+      border: 1px solid rgba(57, 255, 20, 0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .fa-card .fa-steps strong { color: #39FF14; }
+    .fa-cta { text-align: center; margin-bottom: 12px; }
+    .fa-cta .btn-primary { font-size: 15px; padding: 14px 32px; }
+    .fa-note {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.35);
+    }
     .btn-primary {
       background: #39FF14;
       color: #0B1A12;
@@ -486,6 +577,11 @@
         <a href="/">← Chob Group</a>
         <a href="#features">Features</a>
         <a href="#servers">Servers</a>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" data-lang-btn="both" class="active">Both</button>
+          <button type="button" data-lang-btn="en">EN</button>
+          <button type="button" data-lang-btn="fa">فا</button>
+        </div>
         <a href="#download" class="btn-download-nav">Download</a>
       </div>
     </nav>
@@ -507,7 +603,7 @@
         RootNet hands you fresh VLESS/V2Ray configs — copy them or export them
         straight into the client app you already use. No account, no built-in tunnel.
       </p>
-      <p class="hero-fa">
+      <p class="hero-fa lang-fa">
         <strong>روت‌نت</strong> — کانفیگ‌های تازهٔ VLESS/V2Ray؛ کپی یا خروجی بگیرید و مستقیم
         در کلاینت خودتان استفاده کنید. بدون حساب کاربری، بدون تونل داخلی.
       </p>
@@ -596,6 +692,41 @@
     </div>
   </section>
 
+  <!-- ─── PERSIAN (فارسی) ─── -->
+  <section class="fa-section lang-fa" id="fa">
+    <div class="container">
+      <div class="fa-card">
+        <h2>روت‌نت — کانفیگ‌های تازه، کلاینت خودت</h2>
+        <p>
+          روت‌نت کانفیگ‌های تازهٔ VLESS/V2Ray را در اختیار شما می‌گذارد — آن‌ها را کپی کنید
+          یا مستقیم به اپلیکیشن VPN مورد علاقه‌تان خروجی بگیرید (v2rayNG، NekoBox، Hiddify و…).
+        </p>
+        <ul>
+          <li>کارکرد با کلاینت خودتان — ترافیک شما از سرورهای روت‌نت عبور نمی‌کند</li>
+          <li>بدون لاگ — حریم خصوصی کامل</li>
+          <li>لیست سرورهای تازه که به‌صورت زنده به‌روز می‌شود</li>
+          <li>پینگ واقعی TCP برای انتخاب سریع‌ترین سرور</li>
+          <li>بدون ثبت‌نام، بدون اشتراک پولی</li>
+        </ul>
+        <div class="fa-steps">
+          <strong>نحوهٔ استفاده:</strong>
+          <ol style="margin: 10px 20px 0 0; padding: 0;">
+            <li>اپ روت‌نت را باز کنید و یک سرور انتخاب کنید</li>
+            <li>کانفیگ را کپی کنید یا دکمهٔ «خروجی» را بزنید</li>
+            <li>کانفیگ مستقیم در کلاینت VPN شما باز می‌شود — متصل شوید!</li>
+          </ol>
+        </div>
+        <div class="fa-cta">
+          <a href="#download" class="btn-primary">دانلود روت‌نت ⬇️</a>
+        </div>
+        <p class="fa-note">
+          روت‌نت اپلیکیشن اندروید است — نسخهٔ وب ویلس‌هاب (بدون نصب) هم در دسترس است:
+          <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener" style="color:#39FF14; text-decoration:underline;">vlesshub-2i2.pages.dev</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- ─── FOOTER ─── -->
   <footer>
     <div class="container">
@@ -678,6 +809,22 @@
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+
+    // ─── LANGUAGE TOGGLE ───
+    const LANG_KEY = 'rootnet_lang';
+    function setLang(lang) {
+      document.body.dataset.lang = lang;
+      document.querySelectorAll('[data-lang-btn]').forEach(b => {
+        b.classList.toggle('active', b.dataset.langBtn === lang);
+      });
+      try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    }
+    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+      btn.addEventListener('click', () => setLang(btn.dataset.langBtn));
+    });
+    let savedLang = 'both';
+    try { savedLang = localStorage.getItem(LANG_KEY) || 'both'; } catch (e) {}
+    if (savedLang === 'en' || savedLang === 'fa') setLang(savedLang);
 
     // ─── INIT ───
     document.addEventListener('DOMContentLoaded', () => {
