@@ -258,21 +258,8 @@ app.*.map.json
 *.sip
 *.conf
 *.config
-*.ovpn
-vlesshub/VlessHub-*.apk
-*.apk
-
-# Admin VlessHub build artifacts
-vlesshub/admin_vlesshub/app/build/
-vlesshub/admin_vlesshub/build/
-vlesshub/admin_vlesshub/local.properties
-vlesshub/admin_vlesshub/.gradle/
-vlesshub/admin_vlesshub/.kotlin/
-vlesshub/*/build/
-vlesshub/*/app/build/
-vlesshub/*/.gradle/
-vlesshub/*/.kotlin/
+*.ovpn*.apk
 
 # Vendored Xray AARs (57 MB each — provide locally, never commit)
-vlesshub/*/app/libs/
 *.zip
+
