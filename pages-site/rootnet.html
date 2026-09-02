@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RootNet — Configs for Your VPN. Rooted in Privacy. | روت‌نت</title>
-  <meta name="description" content="RootNet — fresh VLESS/V2Ray configs. Copy them or export them into your favorite client app (v2rayNG, NekoBox, Hiddify). Download now. | روت‌نت: کانفیگ‌های تازهٔ VLESS، بدون لاگ و بدون حساب کاربری." />
-  <meta property="og:title" content="RootNet — Configs for Your VPN. Rooted in Privacy. | روت‌نت" />
-  <meta property="og:description" content="Fresh VLESS/V2Ray configs — copy or export into your favorite client app. Zero logs, no account. | کانفیگ‌های تازهٔ VLESS، بدون لاگ و بدون حساب کاربری." />
+  <title>RootNet-VPN — Free Connections. Rooted in Privacy. | روت‌نت</title>
+  <meta name="description" content="RootNet-VPN — free 30-minute connections for watching an ad, or a subscription with 100 GB across all platforms. Fresh VLESS/V2Ray configs, zero logs. | روت‌نت-VPN: اتصال رایگان، بدون لاگ." />
+  <meta property="og:title" content="RootNet-VPN — Free Connections. Rooted in Privacy. | روت‌نت" />
+  <meta property="og:description" content="Free 30-minute connections for watching an ad — or 100 GB/month across all platforms with a subscription. Zero logs." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://chobgroup.pages.dev/rootnet" />
   <meta property="og:locale" content="en_US" />
@@ -18,15 +18,17 @@
   {
     "@context": "https://schema.org",
     "@type": "MobileApplication",
-    "name": "RootNet",
+    "name": "RootNet-VPN",
     "alternateName": "روت‌نت",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Android 6.0+",
     "url": "https://chobgroup.pages.dev/rootnet",
     "inLanguage": ["en", "fa"],
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "description": "Fresh VLESS/V2Ray configs — copy or export into your favorite VPN client. Zero logs, no account.",
-    "descriptionFa": "روت‌نت: کانفیگ‌های تازهٔ VLESS، بدون لاگ و بدون حساب کاربری."
+    "offers": [
+      { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free — 30 min per ad" },
+      { "@type": "Offer", "price": "100", "priceCurrency": "GB per month", "name": "Subscription — 100 GB across platforms" }
+    ],
+    "description": "Free 30-minute VPN connections for watching an ad, or a subscription with 100 GB/month across all platforms. Zero logs."
   }
   </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%2339FF14' stroke-width='2'/><circle cx='50' cy='50' r='4' fill='%2339FF14'/><line x1='50' y1='50' x2='50' y2='10' stroke='%2339FF14' stroke-width='1.5' opacity='0.4'/><line x1='50' y1='50' x2='85' y2='50' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/><line x1='50' y1='50' x2='22' y2='76' stroke='%2339FF14' stroke-width='1.5' opacity='0.3'/></svg>" />
@@ -103,11 +105,7 @@
       padding: 20px 0;
       border-bottom: 1px solid rgba(57, 255, 20, 0.08);
     }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .logo { display: flex; align-items: center; gap: 12px; }
     .logo-icon {
       width: 36px;
       height: 36px;
@@ -126,17 +124,9 @@
       border-radius: 50%;
       box-shadow: 0 0 10px #39FF14;
     }
-    .logo-text {
-      font-size: 22px;
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
+    .logo-text { font-size: 21px; font-weight: 600; letter-spacing: 0.5px; }
     .logo-text span { color: #39FF14; }
-    .nav-links {
-      display: flex;
-      gap: 28px;
-      align-items: center;
-    }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
     .nav-links a {
       font-size: 14px;
       color: rgba(234, 234, 234, 0.6);
@@ -152,11 +142,9 @@
       font-size: 14px;
       transition: box-shadow 0.3s;
     }
-    .btn-download-nav:hover {
-      box-shadow: 0 0 30px rgba(57, 255, 20, 0.3);
-    }
+    .btn-download-nav:hover { box-shadow: 0 0 30px rgba(57, 255, 20, 0.3); }
 
-    /* ─── BUTTONS (single definition) ─── */
+    /* ─── BUTTONS ─── */
     .btn-primary {
       background: #39FF14;
       color: #0B1A12;
@@ -192,10 +180,7 @@
     }
 
     /* ─── HERO ─── */
-    .hero {
-      padding: 100px 0 80px;
-      text-align: center;
-    }
+    .hero { padding: 100px 0 80px; text-align: center; }
     .hero-badge {
       display: inline-block;
       padding: 6px 16px;
@@ -222,7 +207,7 @@
     .hero p {
       font-size: 18px;
       color: rgba(234, 234, 234, 0.6);
-      max-width: 560px;
+      max-width: 600px;
       margin: 0 auto 40px;
       line-height: 1.6;
     }
@@ -264,15 +249,10 @@
       transition: background 0.2s, color 0.2s;
       font-family: inherit;
     }
-    .lang-toggle button.active {
-      background: #39FF14;
-      color: #0B1A12;
-    }
+    .lang-toggle button.active { background: #39FF14; color: #0B1A12; }
     body[data-lang="en"] .lang-fa,
     body[data-lang="fa"] .lang-en { display: none !important; }
-    @media (max-width: 768px) {
-      .lang-toggle { margin-left: 0; }
-    }
+    @media (max-width: 768px) { .lang-toggle { margin-left: 0; } }
 
     /* ─── ANIMATED LOGO (CSS) ─── */
     .hero-logo {
@@ -345,10 +325,51 @@
       color: rgba(234, 234, 234, 0.5);
       text-align: center;
       font-size: 16px;
-      max-width: 500px;
+      max-width: 540px;
       margin: 0 auto 60px;
       line-height: 1.6;
     }
+
+    /* ─── HOW IT WORKS (plans) ─── */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .plan-card {
+      background: rgba(15, 30, 20, 0.6);
+      border: 1px solid rgba(57, 255, 20, 0.12);
+      border-radius: 20px;
+      padding: 36px 28px;
+      text-align: center;
+      transition: border-color 0.3s, transform 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    .plan-card:hover { border-color: rgba(57, 255, 20, 0.3); transform: translateY(-4px); }
+    .plan-card.plan-pro {
+      border-color: rgba(57, 255, 20, 0.35);
+      background: linear-gradient(160deg, rgba(57, 255, 20, 0.07), rgba(15, 30, 20, 0.6));
+    }
+    .plan-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .plan-badge.free { background: rgba(57, 255, 20, 0.1); color: #39FF14; border: 1px solid rgba(57, 255, 20, 0.25); }
+    .plan-badge.pro { background: rgba(136, 136, 255, 0.12); color: #8888FF; border: 1px solid rgba(136, 136, 255, 0.3); }
+    .plan-icon { font-size: 40px; margin-bottom: 14px; }
+    .plan-card h3 { font-size: 20px; margin-bottom: 6px; }
+    .plan-big { font-size: 30px; font-weight: 700; color: #39FF14; margin: 10px 0 2px; }
+    .plan-big small { font-size: 14px; font-weight: 500; color: rgba(234, 234, 234, 0.45); }
+    .plan-card p { font-size: 14px; color: rgba(234, 234, 234, 0.55); line-height: 1.7; margin-top: 12px; }
+    .plan-price { margin-top: 16px; font-size: 13px; color: rgba(234, 234, 234, 0.35); }
 
     /* ─── FEATURES ─── */
     .features-grid {
@@ -379,23 +400,50 @@
       margin-bottom: 16px;
       font-size: 20px;
     }
-    .feature-card h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
+    .feature-card h3 { font-size: 18px; margin-bottom: 8px; }
     .feature-card p {
       font-size: 14px;
       color: rgba(234, 234, 234, 0.5);
       line-height: 1.6;
     }
 
-    /* ─── SERVERS ─── */
-    .server-list {
+    /* ─── ROADMAP ─── */
+    .roadmap-grid {
       display: grid;
-      gap: 12px;
-      max-width: 700px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
       margin: 0 auto;
     }
+    .road-card {
+      background: rgba(15, 30, 20, 0.55);
+      border: 1px solid rgba(57, 255, 20, 0.1);
+      border-radius: 18px;
+      padding: 32px 26px;
+      transition: border-color 0.3s, transform 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    .road-card:hover { border-color: rgba(57, 255, 20, 0.25); transform: translateY(-3px); }
+    .road-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .road-icon { font-size: 30px; }
+    .status-chip {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+      padding: 3px 10px; border-radius: 10px; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status-chip.soon { background: rgba(255, 200, 50, 0.12); color: #FFC832; border: 1px solid rgba(255, 200, 50, 0.3); }
+    .road-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .road-card p { font-size: 14px; color: rgba(234, 234, 234, 0.55); line-height: 1.7; }
+    .road-card .road-detail { margin-top: 12px; font-size: 13px; color: rgba(234, 234, 234, 0.4); }
+
+    /* ─── SERVERS ─── */
+    .server-list { display: grid; gap: 12px; max-width: 700px; margin: 0 auto; }
     .server-card {
       background: rgba(15, 30, 20, 0.5);
       border: 1px solid rgba(57, 255, 20, 0.08);
@@ -406,13 +454,8 @@
       gap: 14px;
       transition: border-color 0.3s;
     }
-    .server-card:hover {
-      border-color: rgba(57, 255, 20, 0.2);
-    }
-    .server-flag {
-      font-size: 28px;
-      line-height: 1;
-    }
+    .server-card:hover { border-color: rgba(57, 255, 20, 0.2); }
+    .server-flag { font-size: 28px; line-height: 1; }
     .server-info { flex: 1; min-width: 0; }
     .server-name {
       font-weight: 600;
@@ -421,10 +464,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .server-country {
-      font-size: 13px;
-      color: rgba(234, 234, 234, 0.4);
-    }
+    .server-country { font-size: 13px; color: rgba(234, 234, 234, 0.4); }
     .server-note {
       text-align: center;
       font-size: 12px;
@@ -455,10 +495,7 @@
       margin-top: 12px;
       transition: background 0.2s, border-color 0.2s;
     }
-    .retry-btn:hover {
-      background: rgba(57, 255, 20, 0.06);
-      border-color: #39FF14;
-    }
+    .retry-btn:hover { background: rgba(57, 255, 20, 0.06); border-color: #39FF14; }
 
     /* ─── DOWNLOAD ─── */
     .download-card {
@@ -470,21 +507,10 @@
       margin: 0 auto;
       text-align: center;
     }
-    .download-card h3 {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-    .download-card p {
-      color: rgba(234, 234, 234, 0.5);
-      font-size: 14px;
-      margin-bottom: 28px;
-    }
+    .download-card h3 { font-size: 24px; margin-bottom: 8px; }
+    .download-card p { color: rgba(234, 234, 234, 0.5); font-size: 14px; margin-bottom: 28px; }
     .download-card .btn-primary { display: inline-flex; }
-    .download-meta {
-      margin-top: 20px;
-      font-size: 12px;
-      color: rgba(234, 234, 234, 0.3);
-    }
+    .download-meta { margin-top: 20px; font-size: 12px; color: rgba(234, 234, 234, 0.3); }
 
     /* ─── PERSIAN SECTION ─── */
     .fa-section { padding: 80px 0; }
@@ -512,19 +538,12 @@
       color: rgba(234, 234, 234, 0.65);
     }
     .fa-card p { margin-bottom: 16px; }
-    .fa-card ul {
-      list-style: none;
-      margin-bottom: 20px;
-    }
+    .fa-card ul { list-style: none; margin-bottom: 20px; }
     .fa-card li {
       padding: 6px 0;
       border-bottom: 1px solid rgba(57, 255, 20, 0.06);
     }
-    .fa-card li::before {
-      content: '◂';
-      color: #39FF14;
-      margin-left: 10px;
-    }
+    .fa-card li::before { content: '◂'; color: #39FF14; margin-left: 10px; }
     .fa-card li:last-child { border-bottom: none; }
     .fa-card .fa-steps {
       background: rgba(57, 255, 20, 0.05);
@@ -536,11 +555,7 @@
     .fa-card .fa-steps strong { color: #39FF14; }
     .fa-cta { text-align: center; margin-bottom: 12px; }
     .fa-cta .btn-primary { font-size: 15px; padding: 14px 32px; }
-    .fa-note {
-      text-align: center;
-      font-size: 12px;
-      color: rgba(234, 234, 234, 0.35);
-    }
+    .fa-note { text-align: center; font-size: 12px; color: rgba(234, 234, 234, 0.35); }
     .fa-note a { color: #39FF14; text-decoration: underline; }
 
     /* ─── FOOTER ─── */
@@ -560,13 +575,8 @@
       color: rgba(234, 234, 234, 0.4);
       transition: color 0.2s;
     }
-    footer .footer-links a:hover {
-      color: #39FF14;
-    }
-    footer p {
-      font-size: 13px;
-      color: rgba(234, 234, 234, 0.3);
-    }
+    footer .footer-links a:hover { color: #39FF14; }
+    footer p { font-size: 13px; color: rgba(234, 234, 234, 0.3); }
 
     /* ─── RESPONSIVE ─── */
     @media (max-width: 768px) {
@@ -590,11 +600,12 @@
     <nav>
       <div class="logo">
         <div class="logo-icon"></div>
-        <div class="logo-text">Root<span>Net</span></div>
+        <div class="logo-text">RootNet<span>-VPN</span></div>
       </div>
       <div class="nav-links">
         <a href="/">← Chob Group</a>
-        <a href="#features">Features</a>
+        <a href="#plans">Plans</a>
+        <a href="#roadmap">Roadmap</a>
         <a href="#servers">Servers</a>
         <div class="lang-toggle" role="group" aria-label="Language">
           <button type="button" data-lang-btn="both" class="active">Both</button>
@@ -616,22 +627,48 @@
         <div class="hero-logo-circle-inner"></div>
         <div class="hero-logo-dot"></div>
       </div>
-      <div class="hero-badge">⚡ v2.0 · A Chob Group project</div>
-      <h1>Your VPN.<br><span>Your Client.</span></h1>
+      <div class="hero-badge">⚡ Free connections · A Chob Group project</div>
+      <h1>Free VPN.<br><span>Rooted in Privacy.</span></h1>
       <p>
-        RootNet hands you fresh VLESS/V2Ray configs — copy them or export them
-        straight into the client app you already use. No account, no built-in tunnel.
+        RootNet-VPN gives you free 30-minute connections for watching a short ad —
+        or go subscription for 100 GB every month, usable across all Chob Group platforms.
       </p>
       <p class="hero-fa lang-fa">
-        <strong>RootNet</strong> — کانفیگ‌های تازهٔ VLESS/V2Ray؛ کپی یا خروجی بگیرید و مستقیم
-        در کلاینت خودتان استفاده کنید. بدون حساب کاربری، بدون تونل داخلی.
+        <strong>RootNet-VPN</strong> — اتصال رایگان ۳۰ دقیقه‌ای در ازای تماشای یک آگهی،
+        یا اشتراک با ۱۰۰ گیگابایت ماهانه روی همهٔ پلتفرم‌ها. بدون لاگ.
       </p>
       <div class="hero-buttons">
         <a href="#download" class="btn-primary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Now
         </a>
-        <a href="#servers" class="btn-secondary">View Servers</a>
+        <a href="#plans" class="btn-secondary">See Plans</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PLANS (how it works) ─── -->
+  <section class="section" id="plans">
+    <div class="container">
+      <h2 class="section-title">How RootNet-VPN Works</h2>
+      <p class="section-sub">Two ways to connect — pick what fits you. Both with zero logs.</p>
+      <div class="plans-grid">
+        <div class="plan-card">
+          <span class="plan-badge free">Free</span>
+          <div class="plan-icon">📺</div>
+          <h3>Watch an Ad</h3>
+          <div class="plan-big">30 min<small> per ad</small></div>
+          <p>Watch a short video ad and get a free 30-minute connection. Repeat as often as you like — it stays free forever.</p>
+          <div class="plan-price">$0 · no account required</div>
+        </div>
+        <div class="plan-card plan-pro">
+          <span class="plan-badge pro">Subscription</span>
+          <div class="plan-icon">🚀</div>
+          <h3>Go Unlimited-ish</h3>
+          <div class="plan-big">100 GB<small> / month</small></div>
+          <p>One subscription, 100 GB of traffic every month — usable across all Chob Group platforms. No ads, no 30-minute timers.</p>
+          <div class="plan-price">Coming with the subscription launch</div>
+        </div>
       </div>
     </div>
   </section>
@@ -639,38 +676,84 @@
   <!-- ─── FEATURES ─── -->
   <section class="section" id="features">
     <div class="container">
-      <h2 class="section-title">Why RootNet?</h2>
-      <p class="section-sub">Fresh configs, your favorite client. Zero compromises.</p>
+      <h2 class="section-title">Why RootNet-VPN?</h2>
+      <p class="section-sub">Built for privacy, priced for everyone.</p>
       <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🚀</div>
-          <h3>Works With Your Client</h3>
-          <p>Copy or export configs straight into v2rayNG, NekoBox, Hiddify or any VLESS/V2Ray client you already use.</p>
-        </div>
         <div class="feature-card">
           <div class="feature-icon">🔒</div>
           <h3>Zero Logs</h3>
-          <p>RootNet never sees your traffic — the connection runs entirely in your own client app.</p>
+          <p>Your traffic is never logged, stored, or sold. The connection runs through hardened VLESS nodes.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🌍</div>
-          <h3>Fresh Servers</h3>
-          <p>The global node list refreshes live from the RootNet API — new servers appear without updating the app.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📱</div>
-          <h3>No Account Needed</h3>
-          <p>Open the app, pick a server, copy or export. No signup, no premium tiers, no tracking.</p>
+          <h3>Fresh Nodes Daily</h3>
+          <p>The server list refreshes automatically — new nodes appear without updating the app.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
-          <h3>One-Tap Export</h3>
-          <p>Tap Export and the config opens in your default VPN client automatically.</p>
+          <h3>Real Latency</h3>
+          <p>Live TCP ping per server so you always pick the fastest node before connecting.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3>Real Latency</h3>
-          <p>Live TCP ping per server helps you always pick the fastest node before you export.</p>
+          <div class="feature-icon">📱</div>
+          <h3>Cross-Platform Quota</h3>
+          <p>Subscription data is shared across the whole Chob Group ecosystem — one balance, everywhere.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>No Account Wall</h3>
+          <p>Free tier works with no signup. Subscription is the only thing that ever needs an identity.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🧩</div>
+          <h3>Open Ecosystem</h3>
+          <p>Config bot, browser extension, and Sheets integration all feed the same network — see the roadmap.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── ROADMAP ─── -->
+  <section class="section" id="roadmap">
+    <div class="container">
+      <h2 class="section-title">Roadmap</h2>
+      <p class="section-sub">What's live, and what's landing next.</p>
+      <div class="roadmap-grid">
+        <div class="road-card">
+          <div class="road-head">
+            <span class="road-icon">📱</span>
+            <span class="status-chip" style="background: rgba(57,255,20,0.12); color:#39FF14; border:1px solid rgba(57,255,20,0.25);">Live</span>
+          </div>
+          <h3>RootNet-VPN App</h3>
+          <p>The Android app: free 30-minute connections for watching an ad, today.</p>
+          <p class="road-detail">Subscription with 100 GB/month across platforms is next on this product.</p>
+        </div>
+        <div class="road-card">
+          <div class="road-head">
+            <span class="road-icon">🤖</span>
+            <span class="status-chip soon">Coming Soon</span>
+          </div>
+          <h3>Config Sales Bot</h3>
+          <p>A Telegram bot that sells ready-made VLESS configs — pick a plan, pay, get a config instantly in chat.</p>
+          <p class="road-detail">Perfect if you don't want to install anything.</p>
+        </div>
+        <div class="road-card">
+          <div class="road-head">
+            <span class="road-icon">🧩</span>
+            <span class="status-chip soon">Coming Soon</span>
+          </div>
+          <h3>Chrome Extension</h3>
+          <p>Browse freely in Chrome with the RootNet-VPN extension. One click to connect.</p>
+          <p class="road-detail">Requires a subscription — but the free tier includes 10 GB every month.</p>
+        </div>
+        <div class="road-card">
+          <div class="road-head">
+            <span class="road-icon">🛰️</span>
+            <span class="status-chip soon">Coming Soon</span>
+          </div>
+          <h3>RootNet for Google Sheets</h3>
+          <p>RootNet's config pipeline rebuilt on Google Apps Script + Sheets — free forever, even without Cloudflare.</p>
+          <p class="road-detail">Target: late 2026.</p>
         </div>
       </div>
     </div>
@@ -680,11 +763,11 @@
   <section class="section" id="servers">
     <div class="container">
       <h2 class="section-title">Our Servers</h2>
-      <p class="section-sub">Freshly updated community nodes — copy one inside the app, or export it to your client.</p>
+      <p class="section-sub">Freshly updated community nodes — connect inside the app.</p>
       <div class="server-list" id="serverList">
         <div class="loading-text" id="serverLoading">Loading servers…</div>
       </div>
-      <p class="server-note">Server list refreshes automatically. Open the app to copy or export a config.</p>
+      <p class="server-note">Server list refreshes automatically. Open the app to connect.</p>
     </div>
   </section>
 
@@ -693,14 +776,14 @@
     <div class="container">
       <div class="download-card">
         <div style="font-size:48px;margin-bottom:16px;">📲</div>
-        <h3>Get RootNet</h3>
-        <p>Download the APK, pick a server, and open the config in the VPN client you already trust.</p>
-        <a href="/downloads/app-release.apk" class="btn-primary" id="downloadBtn" download="RootNet-v2.1.0.apk">
+        <h3>Get RootNet-VPN</h3>
+        <p>Download the APK, watch an ad, and get your first free 30-minute connection.</p>
+        <a href="/downloads/app-release.apk" class="btn-primary" id="downloadBtn" download="RootNet-VPN-v2.1.0.apk">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download APK v2.1.0
         </a>
         <p class="download-meta">
-          v2.1.0 · Android 6.0+ · 1.8 MB · Requires a VLESS client app (v2rayNG, NekoBox, Hiddify…)
+          v2.1.0 · Android 6.0+ · 1.8 MB
         </p>
       </div>
     </div>
@@ -710,31 +793,31 @@
   <section class="fa-section lang-fa" id="fa" lang="fa" dir="rtl">
     <div class="container">
       <div class="fa-card">
-        <h2>RootNet — کانفیگ‌های تازه، کلاینت خودتان</h2>
+        <h2>RootNet-VPN — اتصال رایگان، حریم خصوصی کامل</h2>
         <p>
-          RootNet کانفیگ‌های تازهٔ VLESS/V2Ray را در اختیار شما می‌گذارد — آن‌ها را کپی کنید
-          یا مستقیم در اپلیکیشن VPN مورد علاقه‌تان خروجی بگیرید (v2rayNG، NekoBox، Hiddify و…).
+          RootNet-VPN به شما اتصال رایگان ۳۰ دقیقه‌ای می‌دهد — کافی است یک آگهی کوتاه تماشا کنید.
+          یا با اشتراک، ماهانه ۱۰۰ گیگابایت ترافیک روی همهٔ پلتفرم‌های گروه چوب داشته باشید.
         </p>
         <ul>
-          <li>کار با کلاینت خودتان — ترافیک شما از سرورهای RootNet عبور نمی‌کند</li>
-          <li>بدون لاگ — حریم خصوصی کامل</li>
+          <li>اتصال رایگان ۳۰ دقیقه‌ای در ازای تماشای آگهی — برای همیشه</li>
+          <li>اشتراک ماهانه با ۱۰۰ گیگابایت مشترک بین همهٔ پلتفرم‌ها</li>
+          <li>بدون لاگ — ترافیک شما هیچ‌جا ذخیره نمی‌شود</li>
           <li>لیست سرورهای تازه که به‌صورت زنده به‌روز می‌شود</li>
           <li>پینگ واقعی TCP برای انتخاب سریع‌ترین سرور</li>
-          <li>بدون ثبت‌نام، بدون اشتراک پولی</li>
         </ul>
         <div class="fa-steps">
           <strong>نحوهٔ استفاده:</strong>
           <ol style="margin: 10px 20px 0 0; padding: 0;">
-            <li>اپ RootNet را باز کنید و یک سرور انتخاب کنید</li>
-            <li>کانفیگ را کپی کنید یا دکمهٔ «خروجی» را بزنید</li>
-            <li>کانفیگ مستقیم در کلاینت VPN شما باز می‌شود — متصل شوید!</li>
+            <li>اپ RootNet-VPN را نصب و باز کنید</li>
+            <li>یک سرور انتخاب کنید و آگهی را تماشا کنید</li>
+            <li>۳۰ دقیقه اتصال رایگان فعال می‌شود — وصل شوید!</li>
           </ol>
         </div>
         <div class="fa-cta">
-          <a href="#download" class="btn-primary">دانلود RootNet ⬇️</a>
+          <a href="#download" class="btn-primary">دانلود RootNet-VPN ⬇️</a>
         </div>
         <p class="fa-note">
-          RootNet یک اپلیکیشن اندروید است — نسخهٔ وب VlessHub (بدون نصب) هم در دسترس است:
+          نسخهٔ وب VlessHub (بدون نصب) هم در دسترس است:
           <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener">vlesshub-2i2.pages.dev</a>
         </p>
       </div>
@@ -748,8 +831,8 @@
         <a href="/">← Chob Group</a>
         <a href="/privacy">Privacy Policy</a>
       </div>
-      <p>© 2026 RootNet · A Chob Group project · Built with ❤️ for privacy</p>
-      <p style="margin-top:6px; font-size:12px; color: rgba(234,234,234,0.25);">v2.0 — config launcher. Traffic never passes through RootNet servers.</p>
+      <p>© 2026 RootNet-VPN · A Chob Group project · Built with ❤️ for privacy</p>
+      <p style="margin-top:6px; font-size:12px; color: rgba(234,234,234,0.25);">Free 30-min sessions per ad · 100 GB/month subscription coming soon · Zero logs</p>
     </div>
   </footer>
 
@@ -758,11 +841,9 @@
     // ─── LOAD SERVER LIST ───
     // Fetches public server names from the RootNet API (no IPs/configs exposed).
     // Honest states: loading skeleton → list, or an error + retry button.
-    // No fake "Online" chips: the API exposes names only, not live status.
     (function () {
       const API_URL = 'https://bprkazfxqmanrybiexnh.supabase.co/functions/v1/rootnet-api/public/servers';
       const listEl = document.getElementById('serverList');
-      let retryBtn = null;
 
       function skeleton(count) {
         listEl.innerHTML = '';
@@ -801,12 +882,13 @@
             const card = document.createElement('div');
             card.className = 'server-card';
             card.innerHTML = `
-              <div class="server-flag">${server.flag || '🌐'}</div>
+              <div class="server-flag"></div>
               <div class="server-info">
                 <div class="server-name"></div>
                 <div class="server-country"></div>
               </div>`;
             // textContent — never inject raw HTML from the API
+            card.querySelector('.server-flag').textContent = server.flag || '🌐';
             card.querySelector('.server-name').textContent = server.name || '';
             card.querySelector('.server-country').textContent = server.country || '';
             listEl.appendChild(card);
