@@ -46,7 +46,7 @@ function downloadMenuKeyboard(ctx: BotContext) {
   return {
     inline_keyboard: [
       [
-        { text: '📱 VlessHub (Android)', callback_data: 'dl_vlesshub' },
+        { text: '🌐 VlessHub (Web App)', callback_data: 'dl_vlesshub' },
       ],
       [
         { text: '🔐 RootNet VPN (Android)', callback_data: 'dl_rootnet' },
@@ -59,13 +59,11 @@ function downloadMenuKeyboard(ctx: BotContext) {
 }
 
 function vlesshubDownloadKeyboard(ctx: BotContext) {
+  // VlessHub is PWA-only now — open the web app instead of GitHub releases.
   return {
     inline_keyboard: [
       [
-        { text: '⬇️ Download Latest Release', url: `https://github.com/${ctx.githubRepoVlessHub}/releases/latest` },
-      ],
-      [
-        { text: '📋 View All Releases', url: `https://github.com/${ctx.githubRepoVlessHub}/releases` },
+        { text: '🌐 Open the Web App', url: 'https://vlesshub-2i2.pages.dev' },
       ],
       [
         { text: '📖 View Source Code', url: `https://github.com/${ctx.githubRepoVlessHub}` },
@@ -151,7 +149,7 @@ const FAQ_TEXTS: Record<string, string> = {
   faq_what: [
     '*What is VlessHub?*',
     '',
-    'VlessHub is a free Android app that provides:',
+    'VlessHub is a free web app (PWA) that provides:',
     '• VLESS/VMess VPN configs from Telegram channels',
     '• MTProto proxies for Telegram',
     '• VPN config files (.npvt, .sip, etc.)',
@@ -379,7 +377,7 @@ function vlesshubText(): string {
     '• VPN config files (.npvt, .sip)',
     '• One-tap import to v2rayNG/NekoBox/Hiddify',
     '',
-    'Requirements: Android 6.0+',
+    'Installable web app (PWA) — works on Android, iOS and PC. No APK needed.',
   ].join('\n');
 }
 

@@ -1,4 +1,5 @@
 # Cloudflare Pages redirects
-# VlessHub PWA moved to its own Pages project — send old links there
+# VlessHub PWA moved to its own Pages project — send old PWA links there
 /vlesshub/* https://vlesshub-2i2.pages.dev/:splat 301
-/vlesshub https://vlesshub-2i2.pages.dev 301
+# Old landing page name
+/proxybox.html https://chobgroup.pages.dev/vlesshub.html 301

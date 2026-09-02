@@ -4,7 +4,7 @@ Customer-facing support bot for VlessHub & RootNet VPN.
 
 ## Features
 
-- 📥 **Download links** — GitHub releases for VlessHub and RootNet VPN
+- 📥 **Download links** — VlessHub (PWA at vlesshub-2i2.pages.dev) and RootNet VPN (GitHub releases)
 - ❓ **FAQ** — Common questions and troubleshooting
 - 📞 **Contact** — Email, Telegram channel, website
 - 📊 **Status** — Real-time service health checks
