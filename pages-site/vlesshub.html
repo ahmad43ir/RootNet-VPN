@@ -449,6 +449,74 @@
       color: rgba(234, 234, 234, 0.3);
     }
 
+    /* ─── PERSIAN SECTION ─── */
+    .fa-section {
+      padding: 80px 0;
+    }
+    .fa-card {
+      background: rgba(15, 30, 20, 0.6);
+      border: 1px solid rgba(76, 255, 136, 0.1);
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 760px;
+      margin: 0 auto;
+      direction: rtl;
+      text-align: right;
+      backdrop-filter: blur(10px);
+    }
+    .fa-card h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #4CFF88;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .fa-card p, .fa-card li {
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(234, 234, 234, 0.65);
+    }
+    .fa-card p {
+      margin-bottom: 16px;
+    }
+    .fa-card ul {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+    .fa-card li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(76, 255, 136, 0.06);
+    }
+    .fa-card li::before {
+      content: '◂';
+      color: #4CFF88;
+      margin-left: 10px;
+    }
+    .fa-card li:last-child { border-bottom: none; }
+    .fa-card .fa-steps {
+      background: rgba(76, 255, 136, 0.05);
+      border: 1px solid rgba(76, 255, 136, 0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .fa-card .fa-steps strong {
+      color: #4CFF88;
+    }
+    .fa-cta {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .fa-cta .btn-primary {
+      font-size: 15px;
+      padding: 14px 32px;
+    }
+    .fa-note {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(234, 234, 234, 0.35);
+    }
+
     /* ─── RESPONSIVE ─── */
     @media (max-width: 768px) {
       .nav-links { display: none; }
@@ -612,6 +680,40 @@
         <p class="cta-meta">
           Free · Installable PWA · Android, iOS &amp; PC<br>
           Mirror: vlesshub-proxy.mobileahmad43-a18.workers.dev
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PERSIAN (فارسی) ─── -->
+  <section class="fa-section" id="fa">
+    <div class="container">
+      <div class="fa-card">
+        <h2>ویلس‌هاب — کانفیگ‌های رایگان VPN، در مرورگر شما</h2>
+        <p>
+          ویلس‌هاب یک اپلیکیشن وب (PWA) است که کانفیگ‌های تازهٔ VLESS و VMess،
+          پروکسی‌های MTProto و فایل‌های کانفیگ VPN را به‌صورت خودکار و شبانه‌روزی برای شما جمع‌آوری می‌کند.
+        </p>
+        <ul>
+          <li>بدون نیاز به نصب — همین صفحه را باز کنید و استفاده کنید</li>
+          <li>بدون ثبت‌نام و کاملاً رایگان</li>
+          <li>روی اندروید، آیفون و کامپیوتر کار می‌کند</li>
+          <li>کانفیگ‌های تازه همیشه در دسترس — لینک مرده نمی‌گیرید</li>
+        </ul>
+        <div class="fa-steps">
+          <strong>نصب در ۳ قدم:</strong>
+          <ol style="margin: 10px 20px 0 0; padding: 0;">
+            <li>روی دکمهٔ «باز کردن اپ» بزنید</li>
+            <li>از منوی مرورگر گزینهٔ <strong>«افزودن به صفحهٔ اصلی»</strong> (Add to Home Screen) را انتخاب کنید</li>
+            <li>حالا ویلس‌هاب مثل یک اپلیکیشن معمولی از صفحهٔ اصلی گوشی باز می‌شود</li>
+          </ol>
+        </div>
+        <div class="fa-cta">
+          <a href="https://vlesshub-2i2.pages.dev" target="_blank" rel="noopener" class="btn-primary">باز کردن اپ 🚀</a>
+        </div>
+        <p class="fa-note">
+          اگر این آدرس در ایران باز نمی‌شود، از <a href="https://vlesshub-proxy.mobileahmad43-a18.workers.dev" target="_blank" rel="noopener" style="color:#4CFF88; text-decoration:underline;">آینهٔ ویلس‌هاب</a> استفاده کنید<br>
+          <span dir="ltr" style="display:inline-block;">vlesshub-proxy.mobileahmad43-a18.workers.dev</span>
         </p>
       </div>
     </div>
