@@ -19,7 +19,7 @@
 
 import { corsPreflight, jsonResponse, isValidIpv4, getClientIp, log, requireEnv } from './_utils.ts';
 import { createGeoService } from './_geo-service.ts';
-import { checkIpRateLimit } from './_rate-limit.ts';
+import { checkIpRateLimit } from '../_shared/rate-limit.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import type { GeoIpResult } from './_types.ts';
 

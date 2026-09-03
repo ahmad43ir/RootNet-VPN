@@ -1,15 +1,17 @@
 // ============================================================
-// 📁 _rate-limit.ts — RATE LIMITING FOR ROOTNET API
+// 📁 _shared/rate-limit.ts — SHARED POSTGRES-BACKED RATE LIMITING
 // ============================================================
-// Replaces the Cloudflare Worker's in-memory Map-based rate
-// limiting with Postgres-backed atomic rate limiting.
+// Canonical rate limiter shared by the Supabase Edge Functions
+// (rootnet-api, proxy-api, geo-api, ...).
 //
-// Uses the check_rate_limit() RPC that was created in the
+// Replaces in-memory / duplicated per-function copies with a
+// Postgres-backed atomic check-and-increment via the
+// check_rate_limit() RPC created in the
 // 20260727000001_create_rate_limits_table.sql migration.
 // ============================================================
 
 /**
- * Check if an IP address is rate limited.
+ * Check if an IP address (or user id) is rate limited.
  * Calls the Postgres RPC check_rate_limit() for atomic check-and-increment.
  *
  * @param supabase - Initialized Supabase client (service_role)

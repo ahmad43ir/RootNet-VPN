@@ -26,7 +26,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { getCorsHeaders, jsonResponse, corsPreflight, getClientIp, validateAntiReplay } from './_utils.ts';
 import { authenticate } from './_auth.ts';
-import { checkIpRateLimit } from './_rate-limit.ts';
+import { checkIpRateLimit } from '../_shared/rate-limit.ts';
 import { sendPushNotification } from './_fcm.ts';
 
 // ═══════════════════════════════════════════════════════════════════════════════

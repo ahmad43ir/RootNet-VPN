@@ -20,6 +20,7 @@
 // ============================================================
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { checkIpRateLimit } from '../_shared/rate-limit.ts';
 
 const BATCH_SIZE = 10;
 const MAX_FETCH = 100;
@@ -65,47 +66,49 @@ async function handleProxies(req: Request): Promise<Response> {
   const { allowed } = await checkIpRateLimit(supabase, getClientIp(req));
   if (!allowed) {
     return json({ error: 'Too many requests. Please slow down.' }, 429, req);
-  }    try {
-        // Exact counts (head queries — no rows returned) for an accurate pool_size.
-        const [{ count: activeCount }, { count: workingCount }] = await Promise.all([
-          supabase.from('scraper_proxies').select('id', { count: 'exact', head: true }).eq('is_active', true),
-          supabase.from('scraper_proxies').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('last_ok', true),
-        ]);
+  }
 
-        const { data, error } = await supabase
-          .from('scraper_proxies')
-          .select('host, port, secret, source, last_ok')
-          .eq('is_active', true)
-          .order('last_checked', { ascending: false, nullsFirst: false })
-          .limit(MAX_FETCH);
+  try {
+    // Exact counts (head queries — no rows returned) for an accurate pool_size.
+    const [{ count: activeCount }, { count: workingCount }] = await Promise.all([
+      supabase.from('scraper_proxies').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('scraper_proxies').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('last_ok', true),
+    ]);
 
-        if (error) throw error;
+    const { data, error } = await supabase
+      .from('scraper_proxies')
+      .select('host, port, secret, source, last_ok')
+      .eq('is_active', true)
+      .order('last_checked', { ascending: false, nullsFirst: false })
+      .limit(MAX_FETCH);
 
-        const rows: any[] = data ?? [];
-        const working = rows.filter((r) => r.last_ok === true);
-        const untested = rows.filter((r) => r.last_ok !== true);
+    if (error) throw error;
 
-        // Random subset — working proxies first, untested tops up.
-        const picked = [...shuffle(working), ...shuffle(untested)].slice(0, BATCH_SIZE);
+    const rows: any[] = data ?? [];
+    const working = rows.filter((r) => r.last_ok === true);
+    const untested = rows.filter((r) => r.last_ok !== true);
 
-        const proxies = picked.map((r) => ({
-          host: r.host,
-          port: r.port,
-          secret: r.secret ?? null,
-          source: r.source ?? null,
-          link: buildTgLink(r.host, r.port, r.secret ?? null),
-        }));
+    // Random subset — working proxies first, untested tops up.
+    const picked = [...shuffle(working), ...shuffle(untested)].slice(0, BATCH_SIZE);
 
-        return json(
-          {
-            proxies,
-            pool_size: activeCount ?? rows.length,
-            working: workingCount ?? working.length,
-          },
-          200,
-          req,
-        );
-      } catch (e) {
+    const proxies = picked.map((r) => ({
+      host: r.host,
+      port: r.port,
+      secret: r.secret ?? null,
+      source: r.source ?? null,
+      link: buildTgLink(r.host, r.port, r.secret ?? null),
+    }));
+
+    return json(
+      {
+        proxies,
+        pool_size: activeCount ?? rows.length,
+        working: workingCount ?? working.length,
+      },
+      200,
+      req,
+    );
+  } catch (e) {
     console.error('[proxy-api] /proxies failed:', (e as Error).message);
     return json({ error: 'Internal server error' }, 500, req);
   }
@@ -171,26 +174,4 @@ function getClientIp(req: Request): string {
     if (ips.length > 0) return ips[ips.length - 1];
   }
   return 'unknown';
-}
-
-async function checkIpRateLimit(
-  supabase: any,
-  identifier: string,
-  maxRequests = 60,
-  windowMinutes = 1,
-): Promise<{ allowed: boolean }> {
-  try {
-    const { data, error } = await supabase.rpc('check_rate_limit', {
-      p_ip_address: identifier,
-      p_max_requests: maxRequests,
-      p_window_minutes: windowMinutes,
-    });
-    if (error) {
-      console.error('[proxy-api] rate-limit RPC failed:', error.message);
-      return { allowed: true }; // fail open
-    }
-    return { allowed: data?.allowed ?? true };
-  } catch {
-    return { allowed: true };
-  }
 }
