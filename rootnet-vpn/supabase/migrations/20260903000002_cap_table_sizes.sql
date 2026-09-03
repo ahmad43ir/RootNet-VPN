@@ -87,7 +87,7 @@ BEGIN
   PERFORM cron.schedule(
     'prune-capped-every-30min',
     '*/30 * * * *',
-    $$SELECT public.prune_capped_tables();$$
+    $job$SELECT public.prune_capped_tables();$job$
   );
 END $$;
 
