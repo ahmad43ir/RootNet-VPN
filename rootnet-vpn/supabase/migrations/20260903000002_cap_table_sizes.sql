@@ -75,18 +75,18 @@ END;
 $$;
 
 -- ──────────────────────────────────────────────
--- 2️⃣  pg_cron schedule (every 30 minutes)
+-- 2️⃣  pg_cron schedule (daily at 04:00 UTC)
 -- ──────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'prune-capped-every-30min') THEN
-    PERFORM cron.unschedule('prune-capped-every-30min');
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'prune-capped-daily') THEN
+    PERFORM cron.unschedule('prune-capped-daily');
   END IF;
   PERFORM cron.schedule(
-    'prune-capped-every-30min',
-    '*/30 * * * *',
+    'prune-capped-daily',
+    '0 4 * * *',
     $job$SELECT public.prune_capped_tables();$job$
   );
 END $$;
